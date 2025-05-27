@@ -1,11 +1,13 @@
 import axios from 'axios';
 
+const API_URL = 'http://localhost:8080';
+
 const api = axios.create({
-    baseURL: 'http://localhost:8080',
-    withCredentials: true,
+    baseURL: API_URL,
+    timeout: 5000,
     headers: {
         'Content-Type': 'application/json',
-    }
+    },
 });
 
 // Request interceptor
@@ -15,6 +17,7 @@ api.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+        config.withCredentials = true;
         return config;
     },
     (error) => {
@@ -24,12 +27,14 @@ api.interceptors.request.use(
 
 // Response interceptor
 api.interceptors.response.use(
-    (response) => response,
-    async (error) => {
+    (response) => {
+        return response;
+    },
+    (error) => {
+        // Dispatch custom event for 401 errors
         if (error.response?.status === 401) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = '/login';
+            // This event will be caught by the AuthProvider component
+            window.dispatchEvent(new CustomEvent('auth:unauthorized'));
         }
         return Promise.reject(error);
     }

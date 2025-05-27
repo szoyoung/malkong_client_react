@@ -1,92 +1,127 @@
-import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { TextField, Button, Box, Typography, Alert } from '@mui/material';
-import { login } from '../../api/auth';
-import { loginStart, loginSuccess, loginFailure } from '../../store/slices/authSlice';
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { login, googleLogin } from '../../store/slices/authSlice';
+import {
+    Box,
+    TextField,
+    Button,
+    Typography,
+    Container,
+    Alert,
+    CircularProgress,
+    Divider
+} from '@mui/material';
+import GoogleIcon from '@mui/icons-material/Google';
 
 const LoginForm = () => {
-    const [formData, setFormData] = useState({
-        email: '',
-        password: '',
-    });
-    const [error, setError] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const location = useLocation();
+    const { loading, error } = useSelector((state) => state.auth);
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
+    useEffect(() => {
+        // URL에서 토큰 파라미터 확인
+        const params = new URLSearchParams(location.search);
+        const token = params.get('token');
+        if (token) {
+            handleGoogleLogin(token);
+        }
+    }, [location]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
-        dispatch(loginStart());
-
-        try {
-            const response = await login(formData);
-            dispatch(loginSuccess(response));
+        const result = await dispatch(login({ email, password }));
+        if (!result.error) {
             navigate('/');
-        } catch (err) {
-            const errorMessage = err.response?.data?.message || '로그인에 실패했습니다.';
-            setError(errorMessage);
-            dispatch(loginFailure(errorMessage));
         }
     };
 
+    const handleGoogleLogin = async (token) => {
+        const result = await dispatch(googleLogin(token));
+        if (!result.error) {
+            navigate('/');
+        }
+    };
+
+    const handleGoogleClick = () => {
+        window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+    };
+
     return (
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-            
-            <TextField
-                margin="normal"
-                required
-                fullWidth
-                id="email"
-                label="이메일"
-                name="email"
-                autoComplete="email"
-                autoFocus
-                value={formData.email}
-                onChange={handleChange}
-            />
-            
-            <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="password"
-                label="비밀번호"
-                type="password"
-                id="password"
-                autoComplete="current-password"
-                value={formData.password}
-                onChange={handleChange}
-            />
-            
-            <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                sx={{ mt: 3, mb: 2 }}
+        <Container component="main" maxWidth="xs">
+            <Box
+                sx={{
+                    marginTop: 8,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                }}
             >
-                로그인
-            </Button>
-            
-            <Typography align="center">
-                계정이 없으신가요?{' '}
-                <Button
-                    color="primary"
-                    onClick={() => navigate('/signup')}
-                >
-                    회원가입
-                </Button>
-            </Typography>
-        </Box>
+                <Typography component="h1" variant="h5">
+                    로그인
+                </Typography>
+                {error && (
+                    <Alert severity="error" sx={{ mt: 2, width: '100%' }}>
+                        {error}
+                    </Alert>
+                )}
+                <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
+                    <TextField
+                        margin="normal"
+                        required
+                        fullWidth
+                        id="email"
+                        label="이메일"
+                        name="email"
+                        autoComplete="email"
+                        autoFocus
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                    <TextField
+                        margin="normal"
+                        required
+                        fullWidth
+                        name="password"
+                        label="비밀번호"
+                        type="password"
+                        id="password"
+                        autoComplete="current-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <Button
+                        type="submit"
+                        fullWidth
+                        variant="contained"
+                        sx={{ mt: 3, mb: 2 }}
+                        disabled={loading}
+                    >
+                        {loading ? <CircularProgress size={24} /> : '로그인'}
+                    </Button>
+                    <Divider sx={{ my: 2 }}>또는</Divider>
+                    <Button
+                        fullWidth
+                        variant="outlined"
+                        startIcon={<GoogleIcon />}
+                        onClick={handleGoogleClick}
+                        sx={{ mb: 2 }}
+                    >
+                        Google로 로그인
+                    </Button>
+                    <Button
+                        fullWidth
+                        variant="text"
+                        onClick={() => navigate('/signup')}
+                    >
+                        계정이 없으신가요? 회원가입
+                    </Button>
+                </Box>
+            </Box>
+        </Container>
     );
 };
 

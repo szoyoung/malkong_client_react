@@ -1,195 +1,235 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  AppBar,
-  Box,
-  Toolbar,
-  IconButton,
-  Typography,
-  Menu,
-  Container,
-  Avatar,
-  Button,
-  Tooltip,
-  MenuItem
-} from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import authService from '../services/authService';
-import { AUTH_ROUTES } from '../constants/auth';
+import { useSelector, useDispatch } from 'react-redux';
+import { logout } from '../store/slices/authSlice';
+import authService from '../api/authService';
 
-const Navbar = () => {
+const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => {
   const navigate = useNavigate();
-  const [anchorElNav, setAnchorElNav] = useState(null);
-  const [anchorElUser, setAnchorElUser] = useState(null);
-  const [user, setUser] = useState(null);
-  const isAuthenticated = authService.isAuthenticated();
+  const dispatch = useDispatch();
+  
+  // Redux에서 로그인 상태 가져오기
+  const { isAuthenticated } = useSelector((state) => state.auth);
 
-  useEffect(() => {
-    const currentUser = authService.getUser();
-    setUser(currentUser);
-  }, [isAuthenticated]);
-
-  const handleOpenNavMenu = (event) => {
-    setAnchorElNav(event.currentTarget);
-  };
-  const handleOpenUserMenu = (event) => {
-    setAnchorElUser(event.currentTarget);
-  };
-
-  const handleCloseNavMenu = () => {
-    setAnchorElNav(null);
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      dispatch(logout());
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // 에러가 발생해도 로그아웃 처리
+      dispatch(logout());
+      navigate('/');
+    }
   };
 
-  const handleCloseUserMenu = () => {
-    setAnchorElUser(null);
-  };
-
-  const handleLogout = () => {
-    authService.logout();
-    handleCloseUserMenu();
-    navigate(AUTH_ROUTES.LOGIN);
+  const handleNavigation = (path) => {
+    navigate(path);
   };
 
   return (
-    <AppBar position="static">
-      <Container maxWidth="xl">
-        <Toolbar disableGutters>
-          <Typography
-            variant="h6"
-            noWrap
-            component="a"
-            href="/"
-            sx={{
-              mr: 2,
-              display: { xs: 'none', md: 'flex' },
-              fontWeight: 700,
-              color: 'inherit',
-              textDecoration: 'none',
+    <div style={{
+      width: '100%', 
+      height: '70px', 
+      left: 0, 
+      top: 0, 
+      position: 'fixed', 
+      background: '#ffffff', // White background
+      overflow: 'visible',
+      zIndex: 1001,
+      borderBottom: '1px solid rgba(0, 0, 0, 0.1)', // Light black border
+      boxShadow: '0px 2px 12px rgba(0, 0, 0, 0.1)', // Light shadow
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '0 24px'
+    }}>
+      {/* Left Section - Logo and Toggle */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px'
+      }}>
+        {/* Sidebar Toggle Button */}
+        {showSidebarToggle && (
+          <div 
+            style={{
+              width: '32px', 
+              height: '32px', 
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              borderRadius: '8px',
+              background: isCollapsed ? '#f5f5f5' : '#e8e8e8', // Light gray backgrounds
+              transition: 'all 0.2s ease',
+              border: '1px solid rgba(0, 0, 0, 0.1)'
+            }}
+            onClick={onToggleSidebar}
+            onMouseEnter={(e) => {
+              e.target.style.background = '#d0d0d0';
+              e.target.style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = isCollapsed ? '#f5f5f5' : '#e8e8e8';
+              e.target.style.transform = 'scale(1)';
             }}
           >
-            DDO
-          </Typography>
+            <div style={{
+              width: '16px', 
+              height: '16px', 
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transform: isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)', 
+              transition: 'transform 0.3s ease'
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M9 18L15 12L9 6" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          </div>
+        )}
 
-          <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
-            <IconButton
-              size="large"
-              aria-label="account of current user"
-              aria-controls="menu-appbar"
-              aria-haspopup="true"
-              onClick={handleOpenNavMenu}
-              color="inherit"
-            >
-              <MenuIcon />
-            </IconButton>
-            <Menu
-              id="menu-appbar"
-              anchorEl={anchorElNav}
-              anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'left',
+        {/* Logo */}
+        <div 
+          style={{
+            color: '#000000', // Black text
+            fontSize: '24px', 
+            fontFamily: 'Inter, sans-serif', 
+            fontWeight: '700', 
+            lineHeight: '32px', 
+            cursor: 'pointer',
+            transition: 'color 0.2s ease'
+          }}
+          onClick={() => handleNavigation(isAuthenticated ? '/dashboard' : '/')}
+          onMouseEnter={(e) => e.target.style.color = '#333333'}
+          onMouseLeave={(e) => e.target.style.color = '#000000'}
+        >
+          또랑또랑
+        </div>
+      </div>
+
+      {/* Right Section - Navigation Menu */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px'
+      }}>
+        {isAuthenticated ? (
+          // 로그인된 경우: 세팅, 로그아웃 버튼
+          <>
+            <div 
+              style={{
+                padding: '8px 16px',
+                color: '#666666', // Dark gray text
+                fontSize: '16px', 
+                fontFamily: 'Inter, sans-serif', 
+                fontWeight: '500', 
+                cursor: 'pointer',
+                borderRadius: '20px',
+                transition: 'all 0.2s ease',
+                background: 'transparent'
               }}
-              keepMounted
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'left',
+              onClick={() => handleNavigation('/settings')}
+              onMouseEnter={(e) => {
+                e.target.style.background = '#f5f5f5';
+                e.target.style.color = '#000000';
               }}
-              open={Boolean(anchorElNav)}
-              onClose={handleCloseNavMenu}
-              sx={{
-                display: { xs: 'block', md: 'none' },
+              onMouseLeave={(e) => {
+                e.target.style.background = 'transparent';
+                e.target.style.color = '#666666';
               }}
             >
-              <MenuItem onClick={() => { handleCloseNavMenu(); navigate(AUTH_ROUTES.HOME); }}>
-                <Typography textAlign="center">홈</Typography>
-              </MenuItem>
-              {isAuthenticated && (
-                <MenuItem onClick={() => { handleCloseNavMenu(); navigate(AUTH_ROUTES.DASHBOARD); }}>
-                  <Typography textAlign="center">대시보드</Typography>
-                </MenuItem>
-              )}
-            </Menu>
-          </Box>
-
-          <Typography
-            variant="h5"
-            noWrap
-            component="a"
-            href="/"
-            sx={{
-              mr: 2,
-              display: { xs: 'flex', md: 'none' },
-              flexGrow: 1,
-              fontWeight: 700,
-              color: 'inherit',
-              textDecoration: 'none',
-            }}
-          >
-            DDO
-          </Typography>
-
-          <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
-            <Button
-              onClick={() => navigate(AUTH_ROUTES.HOME)}
-              sx={{ my: 2, color: 'white', display: 'block' }}
+              Settings
+            </div>
+            <div 
+              style={{
+                padding: '8px 16px',
+                color: '#ffffff', 
+                fontSize: '16px', 
+                fontFamily: 'Inter, sans-serif', 
+                fontWeight: '500', 
+                cursor: 'pointer',
+                borderRadius: '20px',
+                background: '#000000', // Black button
+                transition: 'all 0.2s ease',
+                border: 'none'
+              }}
+              onClick={handleLogout}
+              onMouseEnter={(e) => {
+                e.target.style.background = '#333333';
+                e.target.style.transform = 'translateY(-1px)';
+                e.target.style.boxShadow = '0px 4px 12px rgba(0, 0, 0, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = '#000000';
+                e.target.style.transform = 'translateY(0px)';
+                e.target.style.boxShadow = 'none';
+              }}
             >
-              홈
-            </Button>
-            {isAuthenticated && (
-              <Button
-                onClick={() => navigate(AUTH_ROUTES.DASHBOARD)}
-                sx={{ my: 2, color: 'white', display: 'block' }}
-              >
-                대시보드
-              </Button>
-            )}
-          </Box>
-
-          <Box sx={{ flexGrow: 0 }}>
-            {isAuthenticated ? (
-              <>
-                <Tooltip title="Open settings">
-                  <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                    <Avatar alt={user?.name || 'User'} src="/static/images/avatar/2.jpg">
-                      {user?.name?.charAt(0) || user?.email?.charAt(0)}
-                    </Avatar>
-                  </IconButton>
-                </Tooltip>
-                <Menu
-                  sx={{ mt: '45px' }}
-                  id="menu-appbar"
-                  anchorEl={anchorElUser}
-                  anchorOrigin={{
-                    vertical: 'top',
-                    horizontal: 'right',
-                  }}
-                  keepMounted
-                  transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'right',
-                  }}
-                  open={Boolean(anchorElUser)}
-                  onClose={handleCloseUserMenu}
-                >
-                  <MenuItem onClick={handleCloseUserMenu}>
-                    <Typography textAlign="center">{user?.name || '사용자'}</Typography>
-                  </MenuItem>
-                  <MenuItem onClick={handleLogout}>
-                    <Typography textAlign="center">로그아웃</Typography>
-                  </MenuItem>
-                </Menu>
-              </>
-            ) : (
-              <Button
-                color="inherit"
-                onClick={() => navigate(AUTH_ROUTES.LOGIN)}
-              >
-                로그인
-              </Button>
-            )}
-          </Box>
-        </Toolbar>
-      </Container>
-    </AppBar>
+              Logout
+            </div>
+          </>
+        ) : (
+          // 로그인되지 않은 경우: 로그인, 회원가입 버튼
+          <>
+            <div 
+              style={{
+                padding: '8px 16px',
+                color: '#666666', // Dark gray text
+                fontSize: '16px', 
+                fontFamily: 'Inter, sans-serif', 
+                fontWeight: '500', 
+                cursor: 'pointer',
+                borderRadius: '20px',
+                transition: 'all 0.2s ease',
+                background: 'transparent'
+              }}
+              onClick={() => handleNavigation('/login')}
+              onMouseEnter={(e) => {
+                e.target.style.background = '#f5f5f5';
+                e.target.style.color = '#000000';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'transparent';
+                e.target.style.color = '#666666';
+              }}
+            >
+              Login
+            </div>
+            <div 
+              style={{
+                padding: '8px 16px',
+                color: '#ffffff', 
+                fontSize: '16px', 
+                fontFamily: 'Inter, sans-serif', 
+                fontWeight: '500', 
+                cursor: 'pointer',
+                borderRadius: '20px',
+                background: '#000000', // Black button
+                transition: 'all 0.2s ease',
+                border: 'none'
+              }}
+              onClick={() => handleNavigation('/signup')}
+              onMouseEnter={(e) => {
+                e.target.style.background = '#333333';
+                e.target.style.transform = 'translateY(-1px)';
+                e.target.style.boxShadow = '0px 4px 12px rgba(0, 0, 0, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = '#000000';
+                e.target.style.transform = 'translateY(0px)';
+                e.target.style.boxShadow = 'none';
+              }}
+            >
+              Sign Up
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   );
 };
 

@@ -1,137 +1,357 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Box, Typography, TextField, Button, Container, InputAdornment, IconButton, Alert } from '@mui/material';
+import { styled } from '@mui/material/styles';
+import GoogleIcon from '@mui/icons-material/Google';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import EmailIcon from '@mui/icons-material/Email';
+import LockIcon from '@mui/icons-material/Lock';
 import { useNavigate } from 'react-router-dom';
-import {
-  Container,
-  Box,
-  Typography,
-  TextField,
-  Button,
-  Link,
-  Alert,
-  Paper
-} from '@mui/material';
-import authService from '../services/authService';
-import { AUTH_ROUTES } from '../constants/auth';
+import { useDispatch, useSelector } from 'react-redux';
+import { login, clearError } from '../store/slices/authSlice';
+import { useUserStore } from '../store/userStore';
+import authService from '../api/authService';
+import Navbar from '../components/Navbar';
 
-const Login = () => {
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+// Theme constants
+const theme = {
+  colors: {
+    primary: {
+      main: '#2C2C2C',
+      hover: '#1C1C1C',
+      light: '#3C3C3C',
+    },
+    text: {
+      primary: '#1E1E1E',
+      secondary: '#666666',
+      white: '#FFFFFF',
+    },
+    background: {
+      default: '#FFFFFF',
+      paper: '#F8F8F8',
+      hover: '#F5F5F5',
+    },
+    border: '#E0E0E0',
+    error: '#FF4D4F',
+  },
+  shadows: {
+    sm: '0px 2px 4px rgba(0, 0, 0, 0.05)',
+    md: '0px 4px 8px rgba(0, 0, 0, 0.1)',
+    lg: '0px 8px 16px rgba(0, 0, 0, 0.15)',
+  },
+  typography: {
+    fontFamily: {
+      primary: 'Inter, sans-serif',
+      secondary: 'Roboto, sans-serif',
+    },
+  },
+};
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+// Styled Components
+const PageContainer = styled(Container)({
+  minHeight: '100vh',
+  minWidth: '100vw',
+  width: '100vw',
+  maxWidth: '100vw',
+  display: 'flex',
+  flexDirection: 'column',
+  padding: 0,
+  margin: 0,
+  background: theme.colors.background.default,
+  paddingTop: '80px', // Navbar 높이만큼 패딩 추가
+});
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+const ContentContainer = styled(Box)({
+  flex: 1,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '80px',
+  padding: '40px',
+});
 
-    try {
-      await authService.login(formData.email, formData.password);
-      navigate(AUTH_ROUTES.HOME);
-    } catch (error) {
-      setError(error.response?.data?.message || '로그인에 실패했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
+const LogoSection = styled(Box)({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: '16px',
+});
 
-  const handleGoogleLogin = () => {
-    authService.googleLogin();
-  };
+const LogoText = styled(Typography)({
+  color: theme.colors.text.primary,
+  fontSize: '56px',
+  fontFamily: theme.typography.fontFamily.primary,
+  fontWeight: 600,
+  letterSpacing: '-0.5px',
+});
+
+const LoginCard = styled(Box)({
+  width: '100%',
+  maxWidth: '400px',
+  padding: '32px',
+  borderRadius: '16px',
+  background: theme.colors.background.default,
+  boxShadow: theme.shadows.md,
+  border: `1px solid ${theme.colors.border}`,
+});
+
+const FormTitle = styled(Typography)({
+  color: theme.colors.text.primary,
+  fontSize: '24px',
+  fontFamily: theme.typography.fontFamily.primary,
+  fontWeight: 600,
+  marginBottom: '24px',
+  textAlign: 'center',
+});
+
+const StyledTextField = styled(TextField)({
+  width: '100%',
+  marginBottom: '16px',
+  '& .MuiOutlinedInput-root': {
+    borderRadius: '8px',
+    backgroundColor: theme.colors.background.default,
+    '& fieldset': {
+      borderColor: theme.colors.border,
+    },
+    '&:hover fieldset': {
+      borderColor: theme.colors.primary.main,
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: theme.colors.primary.main,
+    },
+  },
+  '& .MuiInputLabel-root': {
+    color: theme.colors.text.secondary,
+  },
+});
+
+const PrimaryButton = styled(Button)({
+  width: '100%',
+  height: '48px',
+  borderRadius: '8px',
+  background: theme.colors.primary.main,
+  color: theme.colors.text.white,
+  fontSize: '16px',
+  fontFamily: theme.typography.fontFamily.secondary,
+  fontWeight: 500,
+  textTransform: 'none',
+  boxShadow: theme.shadows.sm,
+  '&:hover': {
+    background: theme.colors.primary.hover,
+    boxShadow: theme.shadows.md,
+  },
+});
+
+const GoogleButton = styled(Button)({
+  width: '100%',
+  height: '48px',
+  borderRadius: '8px',
+  background: theme.colors.background.default,
+  color: theme.colors.text.primary,
+  fontSize: '16px',
+  fontFamily: theme.typography.fontFamily.secondary,
+  fontWeight: 500,
+  textTransform: 'none',
+  border: `1px solid ${theme.colors.border}`,
+  marginTop: '16px',
+  '&:hover': {
+    background: theme.colors.background.hover,
+  },
+});
+
+const LinkText = styled(Typography)({
+  color: theme.colors.text.primary,
+  fontSize: '14px',
+  fontFamily: theme.typography.fontFamily.primary,
+  textDecoration: 'underline',
+  cursor: 'pointer',
+  '&:hover': {
+    color: theme.colors.primary.main,
+  },
+});
+
+const LoginForm = ({ email, setEmail, password, setPassword, onSubmit, navigate, error, loading }) => {
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <Container component="main" maxWidth="xs">
-      <Box
-        sx={{
-          marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
+    <form onSubmit={onSubmit}>
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      
+      <StyledTextField
+        label="이메일"
+        variant="outlined"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <EmailIcon sx={{ color: theme.colors.text.secondary }} />
+            </InputAdornment>
+          ),
         }}
+      />
+
+      <StyledTextField
+        label="비밀번호"
+        type={showPassword ? 'text' : 'password'}
+        variant="outlined"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <LockIcon sx={{ color: theme.colors.text.secondary }} />
+            </InputAdornment>
+          ),
+          endAdornment: (
+            <InputAdornment position="end">
+              <IconButton
+                onClick={() => setShowPassword(!showPassword)}
+                edge="end"
+              >
+                {showPassword ? <VisibilityOff /> : <Visibility />}
+              </IconButton>
+            </InputAdornment>
+          ),
+        }}
+      />
+
+      <PrimaryButton 
+        type="submit"
+        disabled={loading}
       >
-        <Paper
-          elevation={3}
-          sx={{
-            padding: 4,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            width: '100%',
-          }}
-        >
-          <Typography component="h1" variant="h5">
-            로그인
-          </Typography>
-          {error && (
-            <Alert severity="error" sx={{ mt: 2, width: '100%' }}>
-              {error}
-            </Alert>
-          )}
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="email"
-              label="이메일"
-              name="email"
-              autoComplete="email"
-              autoFocus
-              value={formData.email}
-              onChange={handleChange}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="비밀번호"
-              type="password"
-              id="password"
-              autoComplete="current-password"
-              value={formData.password}
-              onChange={handleChange}
-            />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
-              disabled={loading}
-            >
-              {loading ? '로그인 중...' : '로그인'}
-            </Button>
-            <Button
-              fullWidth
-              variant="outlined"
-              onClick={handleGoogleLogin}
-              sx={{ mb: 2 }}
-            >
-              Google로 로그인
-            </Button>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-              <Link href="#" variant="body2" onClick={() => navigate(AUTH_ROUTES.SIGNUP)}>
-                회원가입
-              </Link>
-              <Link href="#" variant="body2" onClick={() => navigate('/forgot-password')}>
-                비밀번호 찾기
-              </Link>
-            </Box>
-          </Box>
-        </Paper>
+        {loading ? '로그인 중...' : '로그인'}
+      </PrimaryButton>
+
+      <GoogleButton
+        startIcon={<GoogleIcon />}
+        onClick={() => authService.googleLogin()}
+        disabled={loading}
+      >
+        Google로 계속하기
+      </GoogleButton>
+
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between',
+        marginTop: '24px',
+      }}>
+        <LinkText onClick={() => navigate('/forgot-password')}>
+          비밀번호 찾기
+        </LinkText>
+        <LinkText onClick={() => navigate('/signup')}>
+          회원가입
+        </LinkText>
       </Box>
-    </Container>
+    </form>
   );
 };
 
-export default Login;
+const Login = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  
+  // Get auth state from Redux
+  const { loading, error, isAuthenticated } = useSelector((state) => state.auth);
+  
+  // Get user state from Zustand
+  const fetchUserInfo = useUserStore(state => state.fetchUserInfo);
+
+  // Clear errors on component mount
+  useEffect(() => {
+    dispatch(clearError());
+  }, [dispatch]);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    
+    // 토큰이 있고 인증된 상태라면 대시보드로 리다이렉트
+    if (token && isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+    
+    // 토큰은 있지만 Redux 상태가 인증되지 않은 경우, 토큰 유효성 확인
+    if (token && !isAuthenticated) {
+      try {
+        // JWT 토큰의 만료 시간을 클라이언트에서 직접 확인
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1]));
+          const currentTime = Math.floor(Date.now() / 1000);
+          
+          // 토큰이 유효하다면 대시보드로 리다이렉트
+          if (payload.exp && payload.exp > currentTime) {
+            navigate('/dashboard', { replace: true });
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Token validation error:', error);
+        // 토큰이 유효하지 않으면 제거
+        localStorage.removeItem('token');
+      }
+    }
+  }, [isAuthenticated, navigate]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Field validation
+    if (!email || !password) {
+      return;
+    }
+
+    try {
+      // Login with Redux (handles authentication)
+      await dispatch(login({ email, password })).unwrap();
+      
+      // After successful login, fetch user info with Zustand
+      await fetchUserInfo();
+      
+      // Navigation happens in the useEffect that watches isAuthenticated
+    } catch (err) {
+      // Error is already handled in the reducer
+    }
+  };
+
+  return (
+    <>
+      <Navbar />
+      <PageContainer>
+        <ContentContainer>
+          <LogoSection>
+            <LogoText>
+              또랑또랑
+            </LogoText>
+          </LogoSection>
+
+          <LoginCard>
+            <FormTitle>
+              로그인
+            </FormTitle>
+            <LoginForm
+              email={email}
+              setEmail={setEmail}
+              password={password}
+              setPassword={setPassword}
+              onSubmit={handleSubmit}
+              navigate={navigate}
+              error={error}
+              loading={loading}
+            />
+          </LoginCard>
+        </ContentContainer>
+      </PageContainer>
+    </>
+  );
+};
+
+export default Login; 
