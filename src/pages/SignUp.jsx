@@ -49,9 +49,9 @@ const theme = {
 
 const PageContainer = styled(Container)({
   minHeight: '100vh',
-  width: '100%',
-  minWidth: '100%',
-  maxWidth: '100%',
+  minWidth: '100vw',
+  width: '100vw',
+  maxWidth: '100vw',
   display: 'flex',
   flexDirection: 'column',
   padding: 0,
@@ -64,10 +64,29 @@ const PageContainer = styled(Container)({
 const ContentContainer = styled(Box)({
   flex: 1,
   display: 'flex',
+  width: '100%',
+  minHeight: 'calc(100vh - 80px)', // Navbar 높이 제외
+  maxWidth: '1200px', // 전체 최대 너비 제한
+  margin: '0 auto', // 중앙 정렬
+  gap: '60px', // 좌우 섹션 간 간격 추가
+});
+
+const LeftSection = styled(Box)({
+  flex: 1,
+  display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: '80px',
   padding: '40px',
+  background: theme.colors.background.default,
+});
+
+const RightSection = styled(Box)({
+  flex: 1,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '40px',
+  background: theme.colors.background.default,
 });
 
 const LogoSection = styled(Box)({
@@ -79,9 +98,9 @@ const LogoSection = styled(Box)({
 
 const LogoText = styled(Typography)({
   color: theme.colors.text.primary,
-  fontSize: '56px',
-  fontFamily: theme.typography.fontFamily.primary,
-  fontWeight: 600,
+  fontSize: '72px', // 크기를 더 크게 조정
+  fontFamily: '"SeoulAlrim", "Noto Sans KR"', // 메인 페이지와 동일한 폰트
+  fontWeight: 800, // 메인 페이지와 동일한 굵기
   letterSpacing: '-0.5px',
 });
 
@@ -296,96 +315,101 @@ const SignUp = () => {
       <Navbar />
       <PageContainer>
         <ContentContainer>
-          <LogoSection>
-            <LogoText>또랑또랑</LogoText>
-          </LogoSection>
-          <SignUpCard>
-            <FormTitle>회원가입</FormTitle>
-            {error && (
-              <Alert severity="error" sx={{ mb: 2, width: '100%' }}>
-                {error}
-              </Alert>
-            )}
-            <form onSubmit={handleSubmit} style={{ width: '100%' }}>
-              <StyledTextField
-                required
-                id="name"
-                label="이름"
-                name="name"
-                autoComplete="name"
-                autoFocus
-                value={formData.name}
-                onChange={handleChange}
-              />
-              <StyledTextField
-                required
-                id="email"
-                label="이메일"
-                name="email"
-                autoComplete="email"
-                value={formData.email}
-                onChange={handleChange}
-                disabled={isEmailVerified}
-              />
-              {!isEmailVerified && (
-                <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                  <StyledTextField
-                    label="인증 코드"
-                    value={verificationCode}
-                    onChange={(e) => setVerificationCode(e.target.value)}
-                    disabled={isSendingCode}
-                  />
-                  <OutlinedButton
-                    variant="outlined"
-                    onClick={handleSendVerificationCode}
-                    disabled={isSendingCode}
-                    sx={{ minWidth: 120 }}
-                  >
-                    {isSendingCode ? <CircularProgress size={24} /> : '코드 전송'}
-                  </OutlinedButton>
-                  <PrimaryButton
-                    variant="contained"
-                    onClick={handleVerifyEmail}
-                    disabled={!verificationCode || loading}
-                    sx={{ minWidth: 80, marginTop: 0 }}
-                  >
-                    {loading ? <CircularProgress size={24} /> : '인증'}
-                  </PrimaryButton>
-                </Box>
+          <LeftSection>
+            <LogoSection>
+              <LogoText>또랑또랑</LogoText>
+            </LogoSection>
+          </LeftSection>
+          
+          <RightSection>
+            <SignUpCard>
+              <FormTitle>회원가입</FormTitle>
+              {error && (
+                <Alert severity="error" sx={{ mb: 2, width: '100%' }}>
+                  {error}
+                </Alert>
               )}
-              <StyledTextField
-                required
-                name="password"
-                label="비밀번호"
-                type="password"
-                id="password"
-                autoComplete="new-password"
-                value={formData.password}
-                onChange={handleChange}
-              />
-              <StyledTextField
-                required
-                name="confirmPassword"
-                label="비밀번호 확인"
-                type="password"
-                id="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-              />
-              <PrimaryButton
-                type="submit"
-                variant="contained"
-                disabled={loading || !isEmailVerified}
-              >
-                {loading ? '처리 중...' : '회원가입'}
-              </PrimaryButton>
-              <Box sx={{ textAlign: 'center', mt: 2 }}>
-                <LinkText onClick={() => navigate(AUTH_ROUTES.LOGIN)}>
-                  이미 계정이 있으신가요? 로그인
-                </LinkText>
-              </Box>
-            </form>
-          </SignUpCard>
+              <form onSubmit={handleSubmit} style={{ width: '100%' }}>
+                <StyledTextField
+                  required
+                  id="name"
+                  label="이름"
+                  name="name"
+                  autoComplete="name"
+                  autoFocus
+                  value={formData.name}
+                  onChange={handleChange}
+                />
+                <StyledTextField
+                  required
+                  id="email"
+                  label="이메일"
+                  name="email"
+                  autoComplete="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  disabled={isEmailVerified}
+                />
+                {!isEmailVerified && (
+                  <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                    <StyledTextField
+                      label="인증 코드"
+                      value={verificationCode}
+                      onChange={(e) => setVerificationCode(e.target.value)}
+                      disabled={isSendingCode}
+                    />
+                    <OutlinedButton
+                      variant="outlined"
+                      onClick={handleSendVerificationCode}
+                      disabled={isSendingCode}
+                      sx={{ minWidth: 120 }}
+                    >
+                      {isSendingCode ? <CircularProgress size={24} /> : '코드 전송'}
+                    </OutlinedButton>
+                    <PrimaryButton
+                      variant="contained"
+                      onClick={handleVerifyEmail}
+                      disabled={!verificationCode || loading}
+                      sx={{ minWidth: 80, marginTop: 0 }}
+                    >
+                      {loading ? <CircularProgress size={24} /> : '인증'}
+                    </PrimaryButton>
+                  </Box>
+                )}
+                <StyledTextField
+                  required
+                  name="password"
+                  label="비밀번호"
+                  type="password"
+                  id="password"
+                  autoComplete="new-password"
+                  value={formData.password}
+                  onChange={handleChange}
+                />
+                <StyledTextField
+                  required
+                  name="confirmPassword"
+                  label="비밀번호 확인"
+                  type="password"
+                  id="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                />
+                <PrimaryButton
+                  type="submit"
+                  variant="contained"
+                  disabled={loading || !isEmailVerified}
+                >
+                  {loading ? '처리 중...' : '회원가입'}
+                </PrimaryButton>
+                <Box sx={{ textAlign: 'center', mt: 2 }}>
+                  <LinkText onClick={() => navigate(AUTH_ROUTES.LOGIN)}>
+                    이미 계정이 있으신가요? 로그인
+                  </LinkText>
+                </Box>
+              </form>
+            </SignUpCard>
+          </RightSection>
         </ContentContainer>
       </PageContainer>
     </>

@@ -35,57 +35,57 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
       left: 0, 
       top: 0, 
       position: 'fixed', 
-      background: '#ffffff', // White background
+      background: '#ffffff',
       overflow: 'visible',
       zIndex: 1001,
-      borderBottom: '1px solid rgba(0, 0, 0, 0.1)', // Light black border
-      boxShadow: '0px 2px 12px rgba(0, 0, 0, 0.1)', // Light shadow
+      borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
+      boxShadow: '0px 1px 8px rgba(0, 0, 0, 0.08)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: '0 24px'
+      padding: '0 40px'
     }}>
       {/* Left Section - Logo and Toggle */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '16px'
+        gap: '20px'
       }}>
         {/* Sidebar Toggle Button */}
         {showSidebarToggle && (
           <div 
             style={{
-              width: '32px', 
-              height: '32px', 
+              width: '36px', 
+              height: '36px', 
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              borderRadius: '8px',
-              background: isCollapsed ? '#f5f5f5' : '#e8e8e8', // Light gray backgrounds
-              transition: 'all 0.2s ease',
-              border: '1px solid rgba(0, 0, 0, 0.1)'
+              borderRadius: '10px',
+              background: isCollapsed ? '#f8f9fa' : '#e9ecef',
+              transition: 'all 0.3s ease',
+              border: '1px solid rgba(0, 0, 0, 0.05)'
             }}
             onClick={onToggleSidebar}
             onMouseEnter={(e) => {
-              e.target.style.background = '#d0d0d0';
+              e.target.style.background = '#dee2e6';
               e.target.style.transform = 'scale(1.05)';
             }}
             onMouseLeave={(e) => {
-              e.target.style.background = isCollapsed ? '#f5f5f5' : '#e8e8e8';
+              e.target.style.background = isCollapsed ? '#f8f9fa' : '#e9ecef';
               e.target.style.transform = 'scale(1)';
             }}
           >
             <div style={{
-              width: '16px', 
-              height: '16px', 
+              width: '18px', 
+              height: '18px', 
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               transform: isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)', 
               transition: 'transform 0.3s ease'
             }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path d="M9 18L15 12L9 6" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
@@ -95,17 +95,23 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
         {/* Logo */}
         <div 
           style={{
-            color: '#000000', // Black text
-            fontSize: '24px', 
+            color: '#000000',
+            fontSize: '28px', 
             fontFamily: 'Inter, sans-serif', 
             fontWeight: '700', 
-            lineHeight: '32px', 
+            lineHeight: '36px', 
             cursor: 'pointer',
-            transition: 'color 0.2s ease'
+            transition: 'all 0.3s ease'
           }}
           onClick={() => handleNavigation(isAuthenticated ? '/dashboard' : '/')}
-          onMouseEnter={(e) => e.target.style.color = '#333333'}
-          onMouseLeave={(e) => e.target.style.color = '#000000'}
+          onMouseEnter={(e) => {
+            e.target.style.color = '#333333';
+            e.target.style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.color = '#000000';
+            e.target.style.transform = 'translateY(0)';
+          }}
         >
           또랑또랑
         </div>
@@ -115,53 +121,55 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '8px'
+        gap: '12px'
       }}>
         {isAuthenticated ? (
           // 로그인된 경우: 세팅, 로그아웃 버튼
           <>
             <div 
               style={{
-                padding: '8px 16px',
-                color: '#666666', // Dark gray text
+                padding: '10px 20px',
+                color: '#6c757d',
                 fontSize: '16px', 
                 fontFamily: 'Inter, sans-serif', 
                 fontWeight: '500', 
                 cursor: 'pointer',
-                borderRadius: '20px',
-                transition: 'all 0.2s ease',
+                borderRadius: '25px',
+                transition: 'all 0.3s ease',
                 background: 'transparent'
               }}
               onClick={() => handleNavigation('/settings')}
               onMouseEnter={(e) => {
-                e.target.style.background = '#f5f5f5';
+                e.target.style.background = '#f8f9fa';
                 e.target.style.color = '#000000';
+                e.target.style.transform = 'translateY(-2px)';
               }}
               onMouseLeave={(e) => {
                 e.target.style.background = 'transparent';
-                e.target.style.color = '#666666';
+                e.target.style.color = '#6c757d';
+                e.target.style.transform = 'translateY(0)';
               }}
             >
               Settings
             </div>
             <div 
               style={{
-                padding: '8px 16px',
+                padding: '10px 20px',
                 color: '#ffffff', 
                 fontSize: '16px', 
                 fontFamily: 'Inter, sans-serif', 
                 fontWeight: '500', 
                 cursor: 'pointer',
-                borderRadius: '20px',
-                background: '#000000', // Black button
-                transition: 'all 0.2s ease',
+                borderRadius: '25px',
+                background: '#000000',
+                transition: 'all 0.3s ease',
                 border: 'none'
               }}
               onClick={handleLogout}
               onMouseEnter={(e) => {
                 e.target.style.background = '#333333';
-                e.target.style.transform = 'translateY(-1px)';
-                e.target.style.boxShadow = '0px 4px 12px rgba(0, 0, 0, 0.3)';
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0px 4px 16px rgba(0, 0, 0, 0.3)';
               }}
               onMouseLeave={(e) => {
                 e.target.style.background = '#000000';
@@ -177,51 +185,52 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
           <>
             <div 
               style={{
-                padding: '8px 16px',
-                color: '#666666', // Dark gray text
+                padding: '10px 20px',
+                color: '#6c757d',
                 fontSize: '16px', 
                 fontFamily: 'Inter, sans-serif', 
                 fontWeight: '500', 
                 cursor: 'pointer',
-                borderRadius: '20px',
-                transition: 'all 0.2s ease',
+                borderRadius: '25px',
+                transition: 'all 0.3s ease',
                 background: 'transparent'
               }}
               onClick={() => handleNavigation('/login')}
               onMouseEnter={(e) => {
-                e.target.style.background = '#f5f5f5';
+                e.target.style.background = '#f8f9fa';
                 e.target.style.color = '#000000';
+                e.target.style.transform = 'translateY(-2px)';
               }}
               onMouseLeave={(e) => {
                 e.target.style.background = 'transparent';
-                e.target.style.color = '#666666';
+                e.target.style.color = '#6c757d';
+                e.target.style.transform = 'translateY(0)';
               }}
             >
               Login
             </div>
             <div 
               style={{
-                padding: '8px 16px',
-                color: '#ffffff', 
+                padding: '10px 20px',
+                color: '#6c757d',
                 fontSize: '16px', 
                 fontFamily: 'Inter, sans-serif', 
                 fontWeight: '500', 
                 cursor: 'pointer',
-                borderRadius: '20px',
-                background: '#000000', // Black button
-                transition: 'all 0.2s ease',
-                border: 'none'
+                borderRadius: '25px',
+                transition: 'all 0.3s ease',
+                background: 'transparent'
               }}
               onClick={() => handleNavigation('/signup')}
               onMouseEnter={(e) => {
-                e.target.style.background = '#333333';
-                e.target.style.transform = 'translateY(-1px)';
-                e.target.style.boxShadow = '0px 4px 12px rgba(0, 0, 0, 0.3)';
+                e.target.style.background = '#f8f9fa';
+                e.target.style.color = '#000000';
+                e.target.style.transform = 'translateY(-2px)';
               }}
               onMouseLeave={(e) => {
-                e.target.style.background = '#000000';
-                e.target.style.transform = 'translateY(0px)';
-                e.target.style.boxShadow = 'none';
+                e.target.style.background = 'transparent';
+                e.target.style.color = '#6c757d';
+                e.target.style.transform = 'translateY(0)';
               }}
             >
               Sign Up
@@ -233,4 +242,4 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
   );
 };
 
-export default Navbar; 
+export default Navbar;

@@ -62,10 +62,29 @@ const PageContainer = styled(Container)({
 const ContentContainer = styled(Box)({
   flex: 1,
   display: 'flex',
+  width: '100%',
+  minHeight: 'calc(100vh - 80px)', // Navbar 높이 제외
+  maxWidth: '1200px', // 전체 최대 너비 제한
+  margin: '0 auto', // 중앙 정렬
+  gap: '60px', // 좌우 섹션 간 간격 추가
+});
+
+const LeftSection = styled(Box)({
+  flex: 1,
+  display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: '80px',
   padding: '40px',
+  background: theme.colors.background.default,
+});
+
+const RightSection = styled(Box)({
+  flex: 1,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '40px',
+  background: theme.colors.background.default,
 });
 
 const LogoSection = styled(Box)({
@@ -77,9 +96,9 @@ const LogoSection = styled(Box)({
 
 const LogoText = styled(Typography)({
   color: theme.colors.text.primary,
-  fontSize: '56px',
-  fontFamily: theme.typography.fontFamily.primary,
-  fontWeight: 600,
+  fontSize: '72px', // 크기를 더 크게 조정
+  fontFamily: '"SeoulAlrim", "Noto Sans KR"', // 메인 페이지와 동일한 폰트
+  fontWeight: 800, // 메인 페이지와 동일한 굵기
   letterSpacing: '-0.5px',
 });
 
@@ -425,38 +444,42 @@ const ForgotPassword = () => {
       <Navbar />
       <PageContainer>
         <ContentContainer>
-          <LogoSection>
-            <LogoText>
-              또랑또랑
-            </LogoText>
-          </LogoSection>
+          <LeftSection>
+            <LogoSection>
+              <LogoText>
+                또랑또랑
+              </LogoText>
+            </LogoSection>
+          </LeftSection>
 
-          <ResetCard>
-            <FormTitle>
-              {getStepTitle()}
-            </FormTitle>
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {error}
-              </Alert>
-            )}
-            {renderStepContent()}
-            {step < 4 && (
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'center',
-                marginTop: '24px',
-              }}>
-                <LinkText onClick={() => navigate('/login')}>
-                  로그인 페이지로 돌아가기
-                </LinkText>
-              </Box>
-            )}
-          </ResetCard>
+          <RightSection>
+            <ResetCard>
+              <FormTitle>
+                {getStepTitle()}
+              </FormTitle>
+              {error && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {error}
+                </Alert>
+              )}
+              {renderStepContent()}
+              {step < 4 && (
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'center',
+                  marginTop: '24px',
+                }}>
+                  <LinkText onClick={() => navigate('/login')}>
+                    로그인 페이지로 돌아가기
+                  </LinkText>
+                </Box>
+              )}
+            </ResetCard>
+          </RightSection>
         </ContentContainer>
       </PageContainer>
     </>
   );
 };
 
-export default ForgotPassword; 
+export default ForgotPassword;
