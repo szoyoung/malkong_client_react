@@ -7,9 +7,9 @@ const HexagonChart = ({ data = {}, transcriptData, analysisDetails }) => {
     const labels = {
         voice: '음성',
         speed: '속도',
-        gesture: '제스처',
-        eyeContact: '시선',
-        confidence: '자신감',
+        anxiety: '불안(미구현)',
+        eyeContact: '시선(미구현)',
+        pitch: '피치',
         clarity: '명확성'
     };
 
@@ -17,9 +17,9 @@ const HexagonChart = ({ data = {}, transcriptData, analysisDetails }) => {
     const defaultData = {
         voice: 0,
         speed: 0,
-        gesture: 0,
+        anxiety: 0,
         eyeContact: 0,
-        confidence: 0,
+        pitch: 0,
         clarity: 0
     };
 
@@ -331,16 +331,22 @@ const HexagonChart = ({ data = {}, transcriptData, analysisDetails }) => {
                                     flex: 1,
                                     overflowY: 'auto'
                                 }}>
-                                    {analysisDetails.map((item, index) => {
+                                    {Object.entries(analysisDetails).map(([key, item], index) => {
                                         const categoryIcons = {
-                                            '음성 강도': '🎤',
-                                            '말하기 속도': '⚡',
-                                            '피치 변화': '🎵',
-                                            '발음 정확도': '🗣️',
-                                            '제스처 (예상)': '👋',
-                                            '제스처': '👋',
-                                            '시선 처리 (예상)': '👀',
-                                            '시선 처리': '👀'
+                                            'voice': '🎤',
+                                            'speed': '⚡',
+                                            'pitch': '🎵',
+                                            'clarity': '🗣️',
+                                            'anxiety': '😰',
+                                            'eyeContact': '👀'
+                                        };
+                                        
+                                        // 객체를 배열 형식으로 변환
+                                        const analysisItem = {
+                                            title: item.grade ? `${key} (${item.grade})` : key,
+                                            score: item.score || 0,
+                                            description: item.text || '분석 결과가 없습니다.',
+                                            suggestions: item.suggestions || []
                                         };
                                         
                                         return (
@@ -375,7 +381,7 @@ const HexagonChart = ({ data = {}, transcriptData, analysisDetails }) => {
                                                         gap: '8px'
                                                     }}>
                                                         <span style={{ fontSize: '16px' }}>
-                                                            {categoryIcons[item.title] || '📊'}
+                                                            {categoryIcons[key] || '📊'}
                                                         </span>
                                                         <h5 style={{
                                                             fontSize: '15px',
@@ -384,7 +390,7 @@ const HexagonChart = ({ data = {}, transcriptData, analysisDetails }) => {
                                                             margin: 0,
                                                             fontFamily: 'Inter, sans-serif'
                                                         }}>
-                                                            {item.title}
+                                                            {analysisItem.title}
                                                         </h5>
                                                     </div>
                                                     <div style={{
@@ -396,14 +402,14 @@ const HexagonChart = ({ data = {}, transcriptData, analysisDetails }) => {
                                                             width: '6px',
                                                             height: '6px',
                                                             borderRadius: '50%',
-                                                            backgroundColor: getScoreColor(item.score)
+                                                            backgroundColor: getScoreColor(analysisItem.score)
                                                         }}></div>
                                                         <span style={{
                                                             fontSize: '15px',
                                                             fontWeight: '700',
-                                                            color: getScoreColor(item.score)
+                                                            color: getScoreColor(analysisItem.score)
                                                         }}>
-                                                            {item.score}점
+                                                            {analysisItem.score}점
                                                         </span>
                                                     </div>
                                                 </div>
@@ -414,46 +420,48 @@ const HexagonChart = ({ data = {}, transcriptData, analysisDetails }) => {
                                                     margin: '0 0 14px 0',
                                                     lineHeight: '1.5'
                                                 }}>
-                                                    {item.description}
+                                                    {analysisItem.description}
                                                 </p>
                                                 
-                                                <div style={{
-                                                    backgroundColor: '#f8f9fa',
-                                                    borderRadius: '8px',
-                                                    padding: '12px',
-                                                    fontSize: '12px',
-                                                    color: '#555555'
-                                                }}>
+                                                {analysisItem.suggestions.length > 0 && (
                                                     <div style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '6px',
-                                                        marginBottom: '8px'
+                                                        backgroundColor: '#f8f9fa',
+                                                        borderRadius: '8px',
+                                                        padding: '12px',
+                                                        fontSize: '12px',
+                                                        color: '#555555'
                                                     }}>
-                                                        <span>💡</span>
-                                                        <strong>개선 제안:</strong>
+                                                        <div style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '6px',
+                                                            marginBottom: '8px'
+                                                        }}>
+                                                            <span>💡</span>
+                                                            <strong>개선 제안:</strong>
+                                                        </div>
+                                                        <ul style={{
+                                                            margin: '0',
+                                                            paddingLeft: '18px',
+                                                            listStyle: 'none'
+                                                        }}>
+                                                            {analysisItem.suggestions.map((suggestion, idx) => (
+                                                                <li key={idx} style={{ 
+                                                                    marginBottom: '3px',
+                                                                    position: 'relative'
+                                                                }}>
+                                                                    <span style={{
+                                                                        position: 'absolute',
+                                                                        left: '-14px',
+                                                                        color: '#4CAF50',
+                                                                        fontWeight: 'bold'
+                                                                    }}>•</span>
+                                                                    {suggestion}
+                                                                </li>
+                                                            ))}
+                                                        </ul>
                                                     </div>
-                                                    <ul style={{
-                                                        margin: '0',
-                                                        paddingLeft: '18px',
-                                                        listStyle: 'none'
-                                                    }}>
-                                                        {item.suggestions.map((suggestion, idx) => (
-                                                            <li key={idx} style={{ 
-                                                                marginBottom: '3px',
-                                                                position: 'relative'
-                                                            }}>
-                                                                <span style={{
-                                                                    position: 'absolute',
-                                                                    left: '-14px',
-                                                                    color: '#4CAF50',
-                                                                    fontWeight: 'bold'
-                                                                }}>•</span>
-                                                                {suggestion}
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
+                                                )}
                                             </div>
                                         );
                                     })}
@@ -476,7 +484,7 @@ const HexagonChart = ({ data = {}, transcriptData, analysisDetails }) => {
                     }}>
                         {transcriptData ? (
                             <div>
-                                {typeof transcriptData === 'object' ? transcriptData.fullText : transcriptData}
+                                {transcriptData}
                             </div>
                         ) : (
                             <div style={{ 

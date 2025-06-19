@@ -4,7 +4,7 @@ const API_URL = 'http://localhost:8080';
 
 const api = axios.create({
     baseURL: API_URL,
-    timeout: 10000, // 타임아웃을 10초로 증가
+    timeout: 300000, // 타임아웃을 5분으로 증가
     headers: {
         'Content-Type': 'application/json',
     },
@@ -21,6 +21,8 @@ api.interceptors.request.use(
         // multipart/form-data 요청의 경우 Content-Type을 자동으로 설정하도록 함
         if (config.data instanceof FormData) {
             delete config.headers['Content-Type']; // 브라우저가 자동으로 설정하도록
+            // 파일 업로드 요청의 경우 타임아웃을 더 길게 설정
+            config.timeout = 300000; // 5분
         }
         
         config.withCredentials = true;
@@ -29,7 +31,8 @@ api.interceptors.request.use(
             url: config.url,
             method: config.method,
             headers: config.headers,
-            hasToken: !!token
+            hasToken: !!token,
+            timeout: config.timeout
         });
         
         return config;

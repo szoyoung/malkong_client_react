@@ -77,23 +77,15 @@ const VideoUploader = ({
   };
 
   const handleUpload = async () => {
-    if (!videoBlob) return;
+    if (!selectedFile && !videoBlob) {
+      setError('파일을 선택하거나 녹화를 완료해주세요.');
+      return;
+    }
     
     setIsUploading(true);
     setError(null);
     
     try {
-      const formData = new FormData();
-      const fileExtension = videoBlob.type.includes('webm') ? '.webm' : '.mp4';
-      const fileName = `recording_${new Date().toISOString().replace(/[:.]/g, '-')}${fileExtension}`;
-      formData.append('file', videoBlob, fileName);
-      
-      const response = await axios.post('/api/presentations/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      
       // 진행률 시뮬레이션
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
@@ -106,7 +98,7 @@ const VideoUploader = ({
       }, 300);
 
       // 파일 업로드
-      const uploadResult = await onFileUpload(selectedFile);
+      const uploadResult = await onFileUpload(selectedFile || videoBlob);
       
       clearInterval(progressInterval);
       setUploadProgress(100);
@@ -116,67 +108,51 @@ const VideoUploader = ({
         setIsAnalyzing(true);
         
         try {
-          const analysisResult = await videoAnalysisService.analyzeVideo(uploadResult.id, selectedFile);
-          
-          console.log('VideoUploader - 분석 결과 구조:', analysisResult);
+          const analysisResult = await videoAnalysisService.analyzeVideo(uploadResult.id, selectedFile || videoBlob);
           
           if (analysisResult.success) {
             setSuccess('비디오 업로드 및 분석이 완료되었습니다!');
             
             if (onAnalysisComplete) {
-              // 분석 완료 후 필요한 모든 데이터 전달
-              // 서버 응답 구조에 따라 분석 데이터 추출
-              const actualAnalysisData = analysisResult.data?.analysisResult || 
-                                        analysisResult.data || 
-                                        analysisResult.analysisResult ||
-                                        analysisResult;
+              // 분석 데이터 구조 통일
+              const actualAnalysisData = {
+                ...analysisResult.data?.analysisResult || 
+                analysisResult.data || 
+                analysisResult.analysisResult ||
+                analysisResult,
+                // 비디오 URL 추가
+                videoUrl: uploadResult.videoUrl || uploadResult.url || URL.createObjectURL(selectedFile || videoBlob)
+              };
               
-              console.log('=== VideoUploader: 분석 성공 ===');
-              console.log('uploadResult:', uploadResult);
-              console.log('analysisResult:', analysisResult);
-              console.log('actualAnalysisData:', actualAnalysisData);
-              console.log('onAnalysisComplete 함수 존재:', typeof onAnalysisComplete);
-              
-              // 모달 닫기 (페이지 이동 전에)
-              console.log('VideoUploader: 모달 닫기 호출 중...');
-              console.log('VideoUploader: 현재 URL:', window.location.href);
               onClose();
               
-              // 약간의 지연 후 콜백 호출 (모달 닫힘 애니메이션 고려)
               setTimeout(() => {
-                console.log('=== VideoUploader: onAnalysisComplete 콜백 호출 시작 ===');
-                console.log('VideoUploader: 콜백 호출 직전 URL:', window.location.href);
                 const callbackData = {
                   presentationId: uploadResult.id,
-                  presentationData: uploadResult,
+                  presentationData: {
+                    ...uploadResult,
+                    videoUrl: actualAnalysisData.videoUrl
+                  },
                   analysisData: actualAnalysisData
                 };
-                console.log('VideoUploader: 콜백에 전달할 데이터:', callbackData);
-                console.log('VideoUploader: onAnalysisComplete 함수 호출 중...');
                 onAnalysisComplete(callbackData);
-                console.log('=== VideoUploader: onAnalysisComplete 콜백 호출 완료 ===');
-                console.log('VideoUploader: 콜백 호출 후 URL:', window.location.href);
               }, 100);
             }
           } else {
             setError(`분석 실패: ${analysisResult.error}`);
             
-            // 분석 실패 시에도 콜백 호출 (에러 정보와 함께)
             if (onAnalysisComplete) {
-              console.log('=== VideoUploader: 분석 실패 ===');
-              console.log('analysisResult:', analysisResult);
-              
-              // 모달 닫기
               onClose();
               
               setTimeout(() => {
-                console.log('=== onAnalysisComplete 실패 콜백 호출 ===');
                 const callbackData = {
                   presentationId: uploadResult.id,
-                  presentationData: uploadResult,
+                  presentationData: {
+                    ...uploadResult,
+                    videoUrl: URL.createObjectURL(selectedFile || videoBlob)
+                  },
                   analysisError: analysisResult.error
                 };
-                console.log('실패 콜백에 전달할 데이터:', callbackData);
                 onAnalysisComplete(callbackData);
               }, 100);
             }
@@ -185,23 +161,18 @@ const VideoUploader = ({
           console.error('분석 오류:', analysisError);
           setError('분석 중 오류가 발생했습니다.');
           
-          // 분석 오류 시에도 콜백 호출
           if (onAnalysisComplete) {
-            console.log('=== VideoUploader: 분석 catch 오류 ===');
-            console.log('analysisError:', analysisError);
-            console.log('uploadResult:', uploadResult);
-            
-            // 모달 닫기
             onClose();
             
             setTimeout(() => {
-              console.log('=== onAnalysisComplete catch 오류 콜백 호출 ===');
               const callbackData = {
                 presentationId: uploadResult.id,
-                presentationData: uploadResult,
+                presentationData: {
+                  ...uploadResult,
+                  videoUrl: URL.createObjectURL(selectedFile || videoBlob)
+                },
                 analysisError: '분석 중 오류가 발생했습니다.'
               };
-              console.log('catch 오류 콜백에 전달할 데이터:', callbackData);
               onAnalysisComplete(callbackData);
             }, 100);
           }
@@ -212,13 +183,16 @@ const VideoUploader = ({
         setSuccess('비디오 업로드가 완료되었습니다!');
       }
       
-      // 성공 후 파일 선택 초기화
+      // 성공 후 초기화
       setSelectedFile(null);
+      setVideoBlob(null);
+      setVideoUrl(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
       
     } catch (err) {
+      console.error('업로드 오류:', err);
       setError(err.message || '업로드 중 오류가 발생했습니다.');
     } finally {
       setIsUploading(false);

@@ -5,14 +5,17 @@ import CollapsibleSidebar from '../components/CollapsibleSidebar';
 import HexagonChart from '../components/HexagonChart';
 import videoAnalysisService from '../api/videoAnalysisService';
 import useAuthValidation from '../hooks/useAuthValidation';
+import { Box, Container, Typography, CircularProgress, Paper, Alert } from '@mui/material';
 
 // 기본 분석 데이터
 const defaultAnalysisData = {
     scores: {
-        voice: 0,
-        speed: 0,
-        pitch: 0,
-        pronunciation: 0
+        voice: 75,
+        speed: 75,
+        anxiety: 75,
+        eyeContact: 75,
+        pitch: 75,
+        clarity: 75
     },
     details: {
         voice: {
@@ -27,13 +30,25 @@ const defaultAnalysisData = {
             text: '분석 결과가 없습니다.',
             wpm: 0
         },
+        anxiety: {
+            grade: 'N/A',
+            score: 75,
+            text: '불안도 분석 기능은 현재 개발 중입니다.',
+            suggestions: ['이 기능은 곧 업데이트될 예정입니다.']
+        },
+        eyeContact: {
+            grade: 'N/A',
+            score: 75,
+            text: '시선 처리 분석 기능은 현재 개발 중입니다.',
+            suggestions: ['이 기능은 곧 업데이트될 예정입니다.']
+        },
         pitch: {
             grade: 'N/A',
             score: 0,
             text: '분석 결과가 없습니다.',
             avg: 0
         },
-        pronunciation: {
+        clarity: {
             score: 0
         }
     },
@@ -86,9 +101,9 @@ const VideoAnalysis = () => {
     const labels = {
         voice: '음성',
         speed: '속도',
-        gesture: '제스처',
-        eyeContact: '시선',
-        confidence: '자신감',
+        anxiety: '불안(미구현)',
+        eyeContact: '시선(미구현)',
+        pitch: '피치',
         clarity: '명확성'
     };
 
@@ -220,134 +235,139 @@ const VideoAnalysis = () => {
     };
 
     const convertSpringBootDataToDisplayFormat = (data) => {
-        console.log('Spring Boot 데이터 변환 시작:', data);
-        console.log('데이터 타입:', typeof data);
-        console.log('데이터 키:', Object.keys(data));
-        
         if (!data) {
-            console.log('데이터가 없음');
             return createDefaultAnalysisData();
         }
 
         // FastAPI 응답 데이터 변환
-        console.log('FastAPI 응답 데이터 변환');
-        console.log('voiceAnalysis:', data.voiceAnalysis);
-        console.log('sttResult:', data.sttResult);
-        
         const fastApiData = {
             id: data.voiceAnalysis?.voiceAnalysisId,
             presentationId: data.presentationId,
             presentationTitle: data.title,
-            intensityGrade: data.voiceAnalysis?.intensityGrade,
-            intensityDb: data.voiceAnalysis?.intensityDb,
-            intensityText: data.voiceAnalysis?.intensityText,
-            pitchGrade: data.voiceAnalysis?.pitchGrade,
-            pitchAvg: data.voiceAnalysis?.pitchAvg,
-            pitchText: data.voiceAnalysis?.pitchText,
-            wpmGrade: data.voiceAnalysis?.wpmGrade,
-            wpmAvg: data.voiceAnalysis?.wpmAvg,
-            wpmComment: data.voiceAnalysis?.wpmComment,
-            transcription: data.sttResult?.transcription,
-            pronunciationScore: data.sttResult?.pronunciationScore
+            intensityGrade: data.voiceAnalysis?.intensityGrade || data.intensity_grade || '보통',
+            intensityDb: data.voiceAnalysis?.intensityDb || data.intensity_db,
+            intensityText: data.voiceAnalysis?.intensityText || data.intensity_text || '음성 강도가 적절합니다.',
+            pitchGrade: data.voiceAnalysis?.pitchGrade || data.pitch_grade || '좋음',
+            pitchAvg: data.voiceAnalysis?.pitchAvg || data.pitch_avg,
+            pitchText: data.voiceAnalysis?.pitchText || data.pitch_text || '피치 변화가 자연스럽습니다.',
+            wpmGrade: data.voiceAnalysis?.wpmGrade || data.wpm_grade || '보통',
+            wpmAvg: data.voiceAnalysis?.wpmAvg || data.wpm_avg,
+            wpmComment: data.voiceAnalysis?.wpmComment || data.wpm_comment || '말하기 속도가 적당합니다.',
+            transcription: data.sttResult?.transcription || data.transcription || '',
+            pronunciationScore: data.sttResult?.pronunciationScore || data.pronunciation_score || 0.75
         };
-
-        console.log('FastAPI 데이터 변환 시작:', fastApiData);
-        console.log('transcription 값:', fastApiData.transcription);
-        console.log('pronunciationScore 값:', fastApiData.pronunciationScore);
 
         // 점수 계산
         const scores = {
-            voice: calculateVoiceScore(fastApiData),
-            speed: calculateSpeedScore(fastApiData),
-            gesture: 75, // 기본값
-            eyeContact: 70, // 기본값
-            confidence: calculateConfidenceScore(fastApiData),
-            clarity: calculateClarityScore(fastApiData)
+            voice: calculateVoiceScore(fastApiData) || 75,
+            speed: calculateSpeedScore(fastApiData) || 75,
+            anxiety: 75,
+            eyeContact: 75,
+            pitch: calculatePitchScore(fastApiData) || 75,
+            clarity: calculateClarityScore(fastApiData) || 75
         };
-
-        console.log('계산된 점수:', scores);
 
         // 상세 분석 정보
-        const details = [
-            {
-                title: '음성 강도',
+        const details = {
+            voice: {
+                grade: fastApiData.intensityGrade,
                 score: scores.voice,
-                description: fastApiData.intensityText || '음성 강도 분석 결과가 없습니다.',
+                text: fastApiData.intensityText,
                 suggestions: getVoiceSuggestions(fastApiData.intensityGrade)
             },
-            {
-                title: '말하기 속도',
+            speed: {
+                grade: fastApiData.wpmGrade,
                 score: scores.speed,
-                description: fastApiData.wpmComment || '말하기 속도 분석 결과가 없습니다.',
+                text: fastApiData.wpmComment,
                 suggestions: getSpeedSuggestions(fastApiData.wpmGrade)
             },
-            {
-                title: '피치 변화',
-                score: calculatePitchScore(fastApiData),
-                description: fastApiData.pitchText || '피치 변화 분석 결과가 없습니다.',
+            anxiety: {
+                grade: 'N/A',
+                score: scores.anxiety,
+                text: '불안도 분석 기능은 현재 개발 중입니다.',
+                suggestions: ['이 기능은 곧 업데이트될 예정입니다.']
+            },
+            eyeContact: {
+                grade: 'N/A',
+                score: scores.eyeContact,
+                text: '시선 처리 분석 기능은 현재 개발 중입니다.',
+                suggestions: ['이 기능은 곧 업데이트될 예정입니다.']
+            },
+            pitch: {
+                grade: fastApiData.pitchGrade,
+                score: calculatePitchScore(fastApiData) || 75,
+                text: fastApiData.pitchText,
                 suggestions: getPitchSuggestions(fastApiData.pitchGrade)
             },
-            {
-                title: '발음 정확도',
-                score: calculatePronunciationScore(fastApiData),
-                description: `발음 정확도: ${(fastApiData.pronunciationScore * 100).toFixed(1)}%`,
+            clarity: {
+                score: calculatePronunciationScore(fastApiData) || 75,
+                text: `발음 정확도: ${(fastApiData.pronunciationScore * 100).toFixed(1)}%`,
                 suggestions: getPronunciationSuggestions(fastApiData.pronunciationScore)
             }
-        ];
-
-        const result = {
-            scores,
-            details,
-            transcript: fastApiData.transcription || '음성 인식 결과가 없습니다.'
         };
 
-        console.log('변환된 결과:', result);
-        return result;
+        return {
+            scores,
+            details,
+            transcription: fastApiData.transcription
+        };
     };
 
     const convertFastApiDataToDisplayFormat = (data) => {
-        console.log('FastAPI 데이터 변환 시작:', data);
-        
         if (!data) {
-            console.log('데이터가 없어 기본값 반환');
             return defaultAnalysisData;
         }
 
         // FastAPI 응답 데이터 구조 변환
         const transformedData = {
             scores: {
-                voice: calculateScore(data.intensity_grade),
-                speed: calculateScore(data.wpm_grade),
-                pitch: calculateScore(data.pitch_grade),
-                pronunciation: data.pronunciation_score ? Math.round(data.pronunciation_score * 100) : 0
+                voice: calculateScore(data.intensity_grade) || 75,
+                speed: calculateScore(data.wpm_grade) || 75,
+                anxiety: 75,
+                eyeContact: 75,
+                pitch: calculateScore(data.pitch_grade) || 75,
+                clarity: data.pronunciation_score ? Math.round(data.pronunciation_score * 100) : 75
             },
             details: {
                 voice: {
-                    grade: data.intensity_grade,
-                    score: calculateScore(data.intensity_grade),
-                    text: data.intensity_text,
-                    db: data.intensity_db
+                    grade: data.intensity_grade || '보통',
+                    score: calculateScore(data.intensity_grade) || 75,
+                    text: data.intensity_text || '음성 강도가 적절합니다. (목 데이터 - FastAPI 서버 연결 필요)',
+                    suggestions: getVoiceSuggestions(data.intensity_grade || '보통')
                 },
                 speed: {
-                    grade: data.wpm_grade,
-                    score: calculateScore(data.wpm_grade),
-                    text: data.wpm_comment,
-                    wpm: data.wpm_avg
+                    grade: data.wpm_grade || '보통',
+                    score: calculateScore(data.wpm_grade) || 75,
+                    text: data.wpm_comment || '말하기 속도가 적당합니다. (목 데이터 - FastAPI 서버 연결 필요)',
+                    suggestions: getSpeedSuggestions(data.wpm_grade || '보통')
+                },
+                anxiety: {
+                    grade: 'N/A',
+                    score: 75,
+                    text: '불안도 분석 기능은 현재 개발 중입니다.',
+                    suggestions: ['이 기능은 곧 업데이트될 예정입니다.']
+                },
+                eyeContact: {
+                    grade: 'N/A',
+                    score: 75,
+                    text: '시선 처리 분석 기능은 현재 개발 중입니다.',
+                    suggestions: ['이 기능은 곧 업데이트될 예정입니다.']
                 },
                 pitch: {
-                    grade: data.pitch_grade,
-                    score: calculateScore(data.pitch_grade),
-                    text: data.pitch_text,
-                    avg: data.pitch_avg
+                    grade: data.pitch_grade || '좋음',
+                    score: calculateScore(data.pitch_grade) || 75,
+                    text: data.pitch_text || '피치 변화가 자연스럽습니다. (목 데이터 - FastAPI 서버 연결 필요)',
+                    suggestions: getPitchSuggestions(data.pitch_grade || '좋음')
                 },
-                pronunciation: {
-                    score: data.pronunciation_score ? Math.round(data.pronunciation_score * 100) : 0
+                clarity: {
+                    score: data.pronunciation_score ? Math.round(data.pronunciation_score * 100) : 75,
+                    text: `발음 정확도: ${(data.pronunciation_score * 100 || 75).toFixed(1)}%`,
+                    suggestions: getPronunciationSuggestions(data.pronunciation_score || 0.75)
                 }
             },
             transcription: data.transcription || '음성 인식 결과가 없습니다.'
         };
 
-        console.log('변환된 데이터:', transformedData);
         return transformedData;
     };
 
@@ -428,97 +448,55 @@ const VideoAnalysis = () => {
         return ['발음이 매우 부정확합니다.', '발음을 크게 개선해보세요.'];
     };
 
-    // 기본값 데이터 변환
-    const convertDefaultDataToDisplayFormat = (data) => {
-        return {
-            scores: {
-                voice: 75,
-                speed: 72,
-                gesture: 75,
-                eyeContact: 70,
-                confidence: 78,
-                clarity: 82
-            },
-            details: [
-                {
-                    title: '음성 분석',
-                    score: 75,
-                    description: '음성 데이터를 분석하고 있습니다. 잠시만 기다려주세요.',
-                    suggestions: ['음성이 포함된 비디오를 업로드해주세요', '마이크 설정을 확인해주세요']
-                },
-                {
-                    title: '말하기 속도',
-                    score: 72,
-                    description: '말하기 속도를 분석하고 있습니다.',
-                    suggestions: ['적절한 속도로 말해보세요']
-                },
-                {
-                    title: '발음 정확도',
-                    score: 82,
-                    description: '발음 정확도를 분석하고 있습니다.',
-                    suggestions: ['명확하게 발음해주세요']
-                }
-            ],
-            transcript: {
-                fullText: data?.transcription || '분석 결과를 불러오는 중입니다. 음성이 포함된 비디오를 업로드하면 더 정확한 분석 결과를 제공할 수 있습니다.',
-                segments: []
-            }
-        };
-    };
-
     // 기본 분석 데이터 생성
     const createDefaultAnalysisData = () => {
         return {
             scores: {
                 voice: 75,
                 speed: 72,
-                gesture: 75,
+                anxiety: 75,
                 eyeContact: 70,
-                confidence: 78,
+                pitch: 78,
                 clarity: 82
             },
-            details: [
-                {
-                    title: '음성 강도',
+            details: {
+                voice: {
+                    grade: 'N/A',
                     score: 75,
-                    description: '목소리 크기와 볼륨의 일관성을 평가합니다.',
+                    text: '목소리 크기와 볼륨의 일관성을 평가합니다.',
                     suggestions: ['마이크 설정을 확인해주세요', '적절한 거리에서 녹음해주세요']
                 },
-                {
-                    title: '말하기 속도',
+                speed: {
+                    grade: 'N/A',
                     score: 72,
-                    description: '분당 단어 수를 기준으로 말하기 속도를 평가합니다.',
+                    text: '분당 단어 수를 기준으로 말하기 속도를 평가합니다.',
                     suggestions: ['청중이 따라올 수 있는 속도로 말해보세요']
                 },
-                {
-                    title: '피치 변화',
+                anxiety: {
+                    grade: 'N/A',
+                    score: 75,
+                    text: '불안도 분석 기능은 현재 개발 중입니다.',
+                    suggestions: ['이 기능은 곧 업데이트될 예정입니다.']
+                },
+                eyeContact: {
+                    grade: 'N/A',
+                    score: 70,
+                    text: '시선 처리 분석 기능은 현재 개발 중입니다.',
+                    suggestions: ['이 기능은 곧 업데이트될 예정입니다.']
+                },
+                pitch: {
+                    grade: 'N/A',
                     score: 78,
-                    description: '목소리의 높낮이 변화와 억양을 평가합니다.',
+                    text: '목소리의 높낮이 변화와 억양을 평가합니다.',
                     suggestions: ['다양한 억양을 사용해보세요']
                 },
-                {
-                    title: '발음 정확도',
+                clarity: {
                     score: 82,
-                    description: '발음의 명확성과 정확도를 평가합니다.',
+                    text: '발음의 명확성과 정확도를 평가합니다.',
                     suggestions: ['또박또박 명확하게 발음해보세요']
-                },
-                {
-                    title: '제스처',
-                    score: 75,
-                    description: '손동작과 몸짓을 통한 표현력을 평가합니다.',
-                    suggestions: ['자연스러운 제스처를 활용해보세요']
-                },
-                {
-                    title: '시선 처리',
-                    score: 70,
-                    description: '카메라와의 아이컨택과 시선 처리를 평가합니다.',
-                    suggestions: ['카메라를 자주 바라보세요']
                 }
-            ],
-            transcript: {
-                fullText: '분석 결과를 불러올 수 없습니다. 음성이 포함된 비디오를 업로드하면 음성 인식 결과와 함께 더 상세한 분석을 제공합니다.',
-                segments: []
-            }
+            },
+            transcription: '분석 결과를 불러올 수 없습니다. 음성이 포함된 비디오를 업로드하면 음성 인식 결과와 함께 더 상세한 분석을 제공합니다.'
         };
     };
 
@@ -587,14 +565,16 @@ const VideoAnalysis = () => {
     }
 
     const finalAnalysisData = analysisData || createDefaultAnalysisData();
+    console.log('finalAnalysisData:', finalAnalysisData);
+    console.log('transcription:', finalAnalysisData.transcription);
 
     // scores가 없을 경우를 대비한 안전장치
     const scores = finalAnalysisData?.scores || {
         voice: 0,
         speed: 0,
-        gesture: 0,
+        anxiety: 0,
         eyeContact: 0,
-        confidence: 0,
+        pitch: 0,
         clarity: 0
     };
 
@@ -686,14 +666,15 @@ const VideoAnalysis = () => {
                             justifyContent: 'center',
                             position: 'relative'
                         }}>
-                            {videoData && videoData.videoUrl ? (
+                            {videoData && (videoData.videoUrl || videoData.url) ? (
                                 <video
                                     controls
-                                    src={videoData.videoUrl}
+                                    src={videoData.videoUrl || videoData.url}
                                     style={{
                                         width: '100%',
                                         height: '100%',
-                                        borderRadius: '12px'
+                                        borderRadius: '12px',
+                                        objectFit: 'contain'
                                     }}
                                 />
                             ) : (
@@ -843,7 +824,7 @@ const VideoAnalysis = () => {
                         {/* HexagonChart - The main component */}
                         <HexagonChart 
                             data={finalAnalysisData.scores} 
-                            transcriptData={typeof finalAnalysisData.transcript === 'object' ? finalAnalysisData.transcript.fullText : finalAnalysisData.transcript}
+                            transcriptData={finalAnalysisData.transcription}
                             analysisDetails={finalAnalysisData.details}
                         />
                     </div>
