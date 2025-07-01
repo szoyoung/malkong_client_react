@@ -42,8 +42,9 @@ const AuthProvider = ({ children }) => {
               console.error('AuthProvider: JWT 파싱 실패:', jwtError);
             }
           } else {
-            // Google OAuth 토큰인 경우에만 API 호출
-            await fetchUserInfo();
+            // Google OAuth 토큰인 경우 - API 호출하지 않음 (OAuth2RedirectHandler에서 이미 사용자 정보 설정됨)
+            console.log('Google OAuth 토큰 감지됨. API 호출 스킵.');
+            // await fetchUserInfo(); // 이 줄을 주석 처리
           }
         } catch (error) {
           console.error('Failed to load user info:', error);

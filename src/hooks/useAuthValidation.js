@@ -471,7 +471,7 @@ const useAuthValidation = (skipRouteValidation = false) => {
   }, [performLogout]);
 
   // 보호된 라우트 목록
-  const protectedRoutes = ['/dashboard', '/video', '/video-analysis', '/settings'];
+  const protectedRoutes = ['/dashboard', '/video', '/video-analysis', '/settings', '/transcript-editor'];
   
   // 현재 경로가 보호된 라우트인지 확인
   const isProtectedRoute = useCallback(() => {

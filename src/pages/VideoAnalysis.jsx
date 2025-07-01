@@ -5,7 +5,8 @@ import CollapsibleSidebar from '../components/CollapsibleSidebar';
 import HexagonChart from '../components/HexagonChart';
 import videoAnalysisService from '../api/videoAnalysisService';
 import useAuthValidation from '../hooks/useAuthValidation';
-import { Box, Container, Typography, CircularProgress, Paper, Alert } from '@mui/material';
+import { Box, Container, Typography, CircularProgress, Paper, Alert, Fab, Tooltip } from '@mui/material';
+import { Edit as EditIcon } from '@mui/icons-material';
 
 // 기본 분석 데이터
 const defaultAnalysisData = {
@@ -88,9 +89,13 @@ const VideoAnalysis = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [pageData, setPageData] = useState(null);
+    
+    // 오른쪽 영역 뷰 상태 추가
+    const [currentView, setCurrentView] = useState('analysis'); // 'analysis' | 'transcript'
+    const [transcriptText, setTranscriptText] = useState('');
 
-    // 인증 검증 스킵 (리디렉션 방지)
-    useAuthValidation(true);
+    // 인증 검증 활성화 (토큰 만료 시 로그인으로 리다이렉트)
+    useAuthValidation();
 
     console.log('=== VideoAnalysis 컴포넌트 렌더링 ===');
     console.log('presentationId:', presentationId);
@@ -512,6 +517,31 @@ const VideoAnalysis = () => {
         return '개선 필요';
     };
 
+    // 대본 수정 영역으로 전환
+    const handleEditTranscript = () => {
+        console.log('=== 대본 수정 영역으로 전환 ===');
+        
+        // 현재 대본 데이터를 transcriptText에 설정
+        const currentTranscript = finalAnalysisData?.transcription || '대본 데이터가 없습니다.';
+        setTranscriptText(currentTranscript);
+        
+        // 뷰를 대본 수정으로 전환
+        setCurrentView('transcript');
+    };
+    
+    // 분석 결과로 돌아가기
+    const handleBackToAnalysis = () => {
+        setCurrentView('analysis');
+    };
+    
+    // 대본 저장
+    const handleSaveTranscript = () => {
+        console.log('대본 저장:', transcriptText);
+        // TODO: 실제 저장 로직 구현
+        alert('대본이 저장되었습니다!');
+        setCurrentView('analysis');
+    };
+
     if (loading) {
         return (
             <div style={{
@@ -798,7 +828,7 @@ const VideoAnalysis = () => {
                     </button>
                 </div>
 
-                {/* Right Sidebar - HexagonChart (Main Focus) */}
+                {/* Right Sidebar - 조건부 렌더링 */}
                 <div style={{
                     width: '40%',
                     height: '100%',
@@ -810,26 +840,134 @@ const VideoAnalysis = () => {
                         padding: '30px 20px 20px 20px',
                         height: '100%'
                     }}>
-                        <h2 style={{
-                            fontSize: '20px',
-                            fontWeight: '700',
-                            color: '#000000',
-                            margin: '0 0 20px 0',
-                            fontFamily: 'Inter, sans-serif',
-                            textAlign: 'center'
-                        }}>
-                            🎯 상세 분석 결과
-                        </h2>
-                        
-                        {/* HexagonChart - The main component */}
-                        <HexagonChart 
-                            data={finalAnalysisData.scores} 
-                            transcriptData={finalAnalysisData.transcription}
-                            analysisDetails={finalAnalysisData.details}
-                        />
+                        {currentView === 'analysis' ? (
+                            <>
+                                <h2 style={{
+                                    fontSize: '20px',
+                                    fontWeight: '700',
+                                    color: '#000000',
+                                    margin: '0 0 20px 0',
+                                    fontFamily: 'Inter, sans-serif',
+                                    textAlign: 'center'
+                                }}>
+                                    🎯 상세 분석 결과
+                                </h2>
+                                
+                                {/* HexagonChart - The main component */}
+                                <HexagonChart 
+                                    data={finalAnalysisData.scores} 
+                                    transcriptData={finalAnalysisData.transcription}
+                                    analysisDetails={finalAnalysisData.details}
+                                />
+                            </>
+                        ) : (
+                            <>
+                                {/* 대본 수정 영역 */}
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    marginBottom: '20px'
+                                }}>
+                                    <h2 style={{
+                                        fontSize: '20px',
+                                        fontWeight: '700',
+                                        color: '#000000',
+                                        margin: '0',
+                                        fontFamily: 'Inter, sans-serif'
+                                    }}>
+                                        📝 대본 수정
+                                    </h2>
+                                </div>
+                                
+                                {/* 대본 텍스트 영역 */}
+                                <div style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    height: 'calc(100% - 120px)'
+                                }}>
+                                    <label style={{
+                                        fontSize: '14px',
+                                        fontWeight: '500',
+                                        color: '#333',
+                                        marginBottom: '8px',
+                                        fontFamily: 'Inter, sans-serif'
+                                    }}>
+                                        발표 대본:
+                                    </label>
+                                    <textarea
+                                        value={transcriptText}
+                                        onChange={(e) => setTranscriptText(e.target.value)}
+                                        placeholder="대본을 입력하거나 수정하세요..."
+                                        style={{
+                                            flex: 1,
+                                            padding: '16px',
+                                            border: '1px solid #ddd',
+                                            borderRadius: '8px',
+                                            fontSize: '14px',
+                                            fontFamily: 'Inter, sans-serif',
+                                            resize: 'none',
+                                            outline: 'none',
+                                            lineHeight: '1.5'
+                                        }}
+                                    />
+                                    
+                                    {/* 저장 버튼 */}
+                                    <button
+                                        onClick={handleSaveTranscript}
+                                        style={{
+                                            marginTop: '16px',
+                                            padding: '12px 24px',
+                                            backgroundColor: '#2C2C2C',
+                                            color: '#ffffff',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            fontSize: '16px',
+                                            fontWeight: '500',
+                                            cursor: 'pointer',
+                                            fontFamily: 'Inter, sans-serif',
+                                            transition: 'background-color 0.2s ease'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.backgroundColor = '#1C1C1C';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.backgroundColor = '#2C2C2C';
+                                        }}
+                                    >
+                                        💾 대본 저장
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
+
+            {/* 플로팅 버튼 - 상태에 따라 변경 */}
+            <Tooltip title={currentView === 'analysis' ? '대본 수정' : '분석 결과'} placement="left">
+                <Fab
+                    color="primary"
+                    aria-label={currentView === 'analysis' ? 'edit transcript' : 'back to analysis'}
+                    onClick={currentView === 'analysis' ? handleEditTranscript : handleBackToAnalysis}
+                    sx={{
+                        position: 'fixed',
+                        bottom: 24,
+                        right: 24,
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        color: '#2C2C2C',
+                        '&:hover': {
+                            backgroundColor: 'rgba(255, 255, 255, 1)',
+                        },
+                        zIndex: 1000,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                        width: 64,
+                        height: 64,
+                        fontSize: '24px'
+                    }}
+                >
+                    {currentView === 'analysis' ? '📝' : '📊'}
+                </Fab>
+            </Tooltip>
         </div>
     );
 };

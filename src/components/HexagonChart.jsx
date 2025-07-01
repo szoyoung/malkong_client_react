@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-const HexagonChart = ({ data = {}, transcriptData, analysisDetails }) => {
+const HexagonChart = ({ data = {}, transcriptData, analysisDetails, size = 350, showLabels = true, showGrid = true, isPreview = false }) => {
     const canvasRef = useRef(null);
     const [activeView, setActiveView] = useState('chart'); // 'chart' 또는 'transcript'
     
@@ -92,32 +92,34 @@ const HexagonChart = ({ data = {}, transcriptData, analysisDetails }) => {
             };
         };
 
-        // Draw grid lines (concentric hexagons)
-        ctx.strokeStyle = colors.grid;
-        ctx.lineWidth = 1;
-        
-        for (let level = 0.2; level <= 1; level += 0.2) {
-            ctx.beginPath();
-            for (let i = 0; i <= sides; i++) {
-                const point = getHexPoint(i, level);
-                if (i === 0) {
-                    ctx.moveTo(point.x, point.y);
-                } else {
-                    ctx.lineTo(point.x, point.y);
+        // Draw grid lines (concentric hexagons) - only if showGrid is true
+        if (showGrid) {
+            ctx.strokeStyle = colors.grid;
+            ctx.lineWidth = 1;
+            
+            for (let level = 0.2; level <= 1; level += 0.2) {
+                ctx.beginPath();
+                for (let i = 0; i <= sides; i++) {
+                    const point = getHexPoint(i, level);
+                    if (i === 0) {
+                        ctx.moveTo(point.x, point.y);
+                    } else {
+                        ctx.lineTo(point.x, point.y);
+                    }
                 }
+                ctx.stroke();
             }
-            ctx.stroke();
-        }
 
-        // Draw axis lines
-        ctx.strokeStyle = colors.grid;
-        ctx.lineWidth = 1;
-        for (let i = 0; i < sides; i++) {
-            const point = getHexPoint(i);
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
-            ctx.lineTo(point.x, point.y);
-            ctx.stroke();
+            // Draw axis lines
+            ctx.strokeStyle = colors.grid;
+            ctx.lineWidth = 1;
+            for (let i = 0; i < sides; i++) {
+                const point = getHexPoint(i);
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(point.x, point.y);
+                ctx.stroke();
+            }
         }
 
         // Draw data polygon
@@ -150,36 +152,40 @@ const HexagonChart = ({ data = {}, transcriptData, analysisDetails }) => {
             ctx.fill();
         });
 
-        // Draw labels and scores
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        
-        dataKeys.forEach((key, index) => {
-            const point = getHexPoint(index, 1.2);
-            const label = labels[key] || key;
-            const score = Math.round(safeData[key] * animationProgress); // 애니메이션된 점수
+        // Draw labels and scores - only if showLabels is true
+        if (showLabels) {
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
             
-            // Draw label
+            dataKeys.forEach((key, index) => {
+                const point = getHexPoint(index, 1.2);
+                const label = labels[key] || key;
+                const score = Math.round(safeData[key] * animationProgress); // 애니메이션된 점수
+                
+                // Draw label
+                ctx.fillStyle = colors.text;
+                ctx.font = 'bold 12px Inter, sans-serif';
+                ctx.fillText(label, point.x, point.y - 8);
+                
+                // Draw score with color
+                ctx.font = '10px Inter, sans-serif';
+                ctx.fillStyle = getScoreColor(safeData[key]);
+                ctx.fillText(`${score}점`, point.x, point.y + 8);
+            });
+        }
+
+        // Draw center score (animated) - only if showLabels is true
+        if (showLabels) {
+            const averageScore = Math.round((Object.values(safeData).reduce((a, b) => a + b, 0) / dataKeys.length) * animationProgress);
             ctx.fillStyle = colors.text;
-            ctx.font = 'bold 12px Inter, sans-serif';
-            ctx.fillText(label, point.x, point.y - 8);
-            
-            // Draw score with color
+            ctx.font = 'bold 14px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${averageScore}`, centerX, centerY - 5);
             ctx.font = '10px Inter, sans-serif';
-            ctx.fillStyle = getScoreColor(safeData[key]);
-            ctx.fillText(`${score}점`, point.x, point.y + 8);
-        });
+            ctx.fillText('평균', centerX, centerY + 10);
+        }
 
-        // Draw center score (animated)
-        const averageScore = Math.round((Object.values(safeData).reduce((a, b) => a + b, 0) / dataKeys.length) * animationProgress);
-        ctx.fillStyle = colors.text;
-        ctx.font = 'bold 14px Inter, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(`${averageScore}`, centerX, centerY - 5);
-        ctx.font = '10px Inter, sans-serif';
-        ctx.fillText('평균', centerX, centerY + 10);
-
-    }, [safeData, activeView, animationProgress]);
+    }, [safeData, activeView, animationProgress, size, showLabels, showGrid]);
 
     const labelStyle = {
         position: 'absolute',
@@ -202,6 +208,29 @@ const HexagonChart = ({ data = {}, transcriptData, analysisDetails }) => {
         pointerEvents: 'none'
     };
 
+    // 미리보기 모드일 때는 간단한 차트만 반환
+    if (isPreview) {
+        return (
+            <div style={{
+                width: size,
+                height: size,
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center'
+            }}>
+                <canvas
+                    ref={canvasRef}
+                    width={size}
+                    height={size}
+                    style={{
+                        maxWidth: '100%',
+                        height: 'auto'
+                    }}
+                />
+            </div>
+        );
+    }
+
     return (
         <div style={{
             width: '100%',
@@ -211,12 +240,13 @@ const HexagonChart = ({ data = {}, transcriptData, analysisDetails }) => {
             overflow: 'hidden'
         }}>
             {/* Tab Navigation */}
-            <div style={{
-                display: 'flex',
-                borderBottom: '1px solid #e9ecef',
-                backgroundColor: '#ffffff',
-                borderRadius: '12px 12px 0 0'
-            }}>
+            {!isPreview && (
+                <div style={{
+                    display: 'flex',
+                    borderBottom: '1px solid #e9ecef',
+                    backgroundColor: '#ffffff',
+                    borderRadius: '12px 12px 0 0'
+                }}>
                 <button
                     onClick={() => setActiveView('chart')}
                     style={{
@@ -279,7 +309,8 @@ const HexagonChart = ({ data = {}, transcriptData, analysisDetails }) => {
                 >
                     📝 발표 대본
                 </button>
-            </div>
+                </div>
+            )}
 
             {/* Content Area */}
             <div style={{
@@ -305,8 +336,8 @@ const HexagonChart = ({ data = {}, transcriptData, analysisDetails }) => {
                         }}>
                             <canvas
                                 ref={canvasRef}
-                                width={350}
-                                height={300}
+                                width={size}
+                                height={size * 0.85}
                                 style={{
                                     maxWidth: '100%',
                                     height: 'auto'

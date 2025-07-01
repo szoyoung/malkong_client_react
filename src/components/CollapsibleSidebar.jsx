@@ -8,6 +8,7 @@ import TopicCreator from './TopicCreator';
 import TopicManager from './TopicManager';
 import PresentationManager from './PresentationManager';
 import VideoPlayer from './VideoPlayer';
+import HexagonChart from './HexagonChart';
 
 const CollapsibleSidebar = ({ isCollapsed }) => {
     const navigate = useNavigate();
@@ -16,6 +17,7 @@ const CollapsibleSidebar = ({ isCollapsed }) => {
     const [isTeamExpanded, setIsTeamExpanded] = useState(true);
     const [expandedTopics, setExpandedTopics] = useState(new Set());
     const [showTopicCreator, setShowTopicCreator] = useState(false);
+    const [analysisResults, setAnalysisResults] = useState({});
 
     // 관리 모달 상태
     const [showTopicManager, setShowTopicManager] = useState(false);
@@ -82,9 +84,32 @@ const CollapsibleSidebar = ({ isCollapsed }) => {
             const result = await topicService.getPresentations(topicId);
             if (result.success) {
                 setPresentations(result.data);
+                
+                // 각 프레젠테이션의 분석 결과 로드
+                for (const presentation of result.data) {
+                    loadAnalysisResults(presentation.id);
+                }
             }
         } catch (error) {
             console.error('Load presentations error:', error);
+        }
+    };
+
+    const loadAnalysisResults = async (presentationId) => {
+        try {
+            const hasResults = await videoAnalysisService.hasAnalysisResults(presentationId);
+            if (hasResults.success && hasResults.data.hasResults) {
+                const analysisData = await videoAnalysisService.getAllAnalysisResults(presentationId);
+                if (analysisData.success) {
+                    console.log('Sidebar - Analysis data loaded for:', presentationId, analysisData.data);
+                    setAnalysisResults(prev => ({
+                        ...prev,
+                        [presentationId]: analysisData.data
+                    }));
+                }
+            }
+        } catch (error) {
+            console.error('Load analysis results error:', error);
         }
     };
 
@@ -321,52 +346,179 @@ const CollapsibleSidebar = ({ isCollapsed }) => {
                             marginTop: '4px'
                         }}>
                             {topicPresentations.length > 0 ? (
-                                topicPresentations.map((presentation) => (
-                                    <div
-                                        key={presentation.id}
-                                        onClick={() => handlePresentationClick(presentation)}
-                                        onContextMenu={(e) => handlePresentationRightClick(e, presentation)}
-                                        style={{
-                                            paddingLeft: '32px',
-                                            paddingRight: '16px',
-                                            paddingTop: '8px',
-                                            paddingBottom: '8px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '8px',
-                                            cursor: 'pointer',
-                                            borderRadius: '6px',
-                                            margin: '1px 8px',
-                                            transition: 'background-color 0.2s ease'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.backgroundColor = '#f9f9f9';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.backgroundColor = 'transparent';
-                                        }}
-                                        title="우클릭으로 프레젠테이션 관리"
-                                    >
-                                        {/* 프레젠테이션 아이콘 */}
-                                        <div style={{ fontSize: '14px' }}>
-                                            {presentation.videoUrl ? '🎥' : '📄'}
-                                        </div>
+                                topicPresentations.map((presentation) => {
+                                    const analysisData = analysisResults[presentation.id];
+                                    const hasAnalysis = !!analysisData;
+                                    
+                                    return (
+                                        <div
+                                            key={presentation.id}
+                                            onClick={() => handlePresentationClick(presentation)}
+                                            onContextMenu={(e) => handlePresentationRightClick(e, presentation)}
+                                            style={{
+                                                paddingLeft: '30px',
+                                                paddingRight: '30px',
+                                                paddingTop: '25px',
+                                                paddingBottom: '25px',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: '20px',
+                                                cursor: 'pointer',
+                                                borderRadius: '15px',
+                                                margin: '8px 8px',
+                                                transition: 'background-color 0.2s ease',
+                                                border: '2px solid #f0f0f0',
+                                                minHeight: '220px'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.backgroundColor = '#f9f9f9';
+                                                e.currentTarget.style.borderColor = '#e0e0e0';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.backgroundColor = 'transparent';
+                                                e.currentTarget.style.borderColor = '#f0f0f0';
+                                            }}
+                                            title="우클릭으로 프레젠테이션 관리"
+                                        >
+                                            {/* 상단: 아이콘 + 제목 */}
+                                            <div style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px'
+                                            }}>
+                                                {/* 프레젠테이션 아이콘 */}
+                                                <div style={{ fontSize: '14px' }}>
+                                                    {presentation.videoUrl ? '🎥' : '📄'}
+                                                </div>
 
-                                        {/* 프레젠테이션 제목 */}
-                                        <div style={{
-                                            color: '#333333',
-                                            fontSize: '13px',
-                                            fontFamily: 'Inter, sans-serif',
-                                            fontWeight: '400',
-                                            flex: 1,
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                            whiteSpace: 'nowrap'
-                                        }}>
-                                            {presentation.title}
+                                                {/* 프레젠테이션 제목 */}
+                                                <div style={{
+                                                    color: '#333333',
+                                                    fontSize: '15px',
+                                                    fontFamily: 'Inter, sans-serif',
+                                                    fontWeight: '600',
+                                                    flex: 1,
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap'
+                                                }}>
+                                                    {presentation.title}
+                                                </div>
+                                            </div>
+
+                                            {/* 하단: 썸네일 + 분석 그래프 (영상이 있을 때) */}
+                                            {presentation.videoUrl && (
+                                                <div style={{
+                                                    display: 'flex',
+                                                    gap: '12px',
+                                                    alignItems: 'center'
+                                                }}>
+                                                    {/* 비디오 썸네일 */}
+                                                    <div style={{
+                                                        width: '160px',
+                                                        height: '120px',
+                                                        backgroundColor: '#f8f9fa',
+                                                        borderRadius: '8px',
+                                                        border: '1px solid #e9ecef',
+                                                        position: 'relative',
+                                                        overflow: 'hidden'
+                                                    }}>
+                                                        <video 
+                                                            src={presentation.videoUrl}
+                                                            style={{
+                                                                width: '100%',
+                                                                height: '100%',
+                                                                objectFit: 'cover',
+                                                                borderRadius: '8px'
+                                                            }}
+                                                            muted
+                                                            preload="metadata"
+                                                            onLoadedMetadata={(e) => {
+                                                                e.target.currentTime = 1; // 1초 지점의 프레임
+                                                            }}
+                                                            onError={(e) => {
+                                                                // 비디오 로드 실패 시 기본 썸네일 표시
+                                                                e.target.style.display = 'none';
+                                                                e.target.nextElementSibling.style.display = 'flex';
+                                                            }}
+                                                        />
+                                                        {/* 비디오 로드 실패 시 대체 썸네일 */}
+                                                        <div style={{
+                                                            width: '100%',
+                                                            height: '100%',
+                                                            backgroundColor: '#333',
+                                                            display: 'none',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            color: 'white',
+                                                            fontSize: '20px',
+                                                            position: 'absolute',
+                                                            top: 0,
+                                                            left: 0
+                                                        }}>
+                                                            ▶
+                                                        </div>
+                                                        {/* 재생 오버레이 아이콘 */}
+                                                        <div style={{
+                                                            position: 'absolute',
+                                                            top: '50%',
+                                                            left: '50%',
+                                                            transform: 'translate(-50%, -50%)',
+                                                            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                                                            borderRadius: '50%',
+                                                            width: '40px',
+                                                            height: '40px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            color: 'white',
+                                                            fontSize: '18px'
+                                                        }}>
+                                                            ▶
+                                                        </div>
+                                                    </div>
+
+                                                    {/* 미니 육각형 차트 또는 분석 대기 상태 */}
+                                                    <div style={{
+                                                        width: '120px',
+                                                        height: '120px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center'
+                                                    }}>
+                                                        {hasAnalysis ? (
+                                                            <HexagonChart
+                                                                data={analysisData.scores || {
+                                                                    voice: 75,
+                                                                    speed: 75,
+                                                                    anxiety: 75,
+                                                                    eyeContact: 75,
+                                                                    pitch: 75,
+                                                                    clarity: 75
+                                                                }}
+                                                                size={110}
+                                                                showLabels={false}
+                                                                showGrid={false}
+                                                                isPreview={true}
+                                                            />
+                                                        ) : (
+                                                            <div style={{
+                                                                fontSize: '16px',
+                                                                color: '#999',
+                                                                textAlign: 'center',
+                                                                lineHeight: '1.3',
+                                                                fontWeight: '500'
+                                                            }}>
+                                                                분석<br/>대기중
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+
                                         </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             ) : (
                                 <div
                                     onClick={() => handleCreatePresentation(topic.id)}
