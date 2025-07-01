@@ -824,7 +824,7 @@ const VideoAnalysis = () => {
                         </h3>
                         <div style={{
                             width: '100%',
-                            height: '300px',
+                            height: isSidebarCollapsed ? '500px' : '400px',
                             backgroundColor: '#000000',
                             borderRadius: '12px',
                             display: 'flex',
@@ -974,7 +974,8 @@ const VideoAnalysis = () => {
                 }}>
                     <div style={{
                         padding: '30px 20px 20px 20px',
-                        height: '100%'
+                        height: '100%',
+                        position: 'relative'
                     }}>
                         {currentView === 'analysis' ? (
                             <>
@@ -1019,7 +1020,8 @@ const VideoAnalysis = () => {
                                 <div style={{
                                     display: 'flex',
                                     flexDirection: 'column',
-                                    height: 'calc(100% - 120px)'
+                                    height: 'calc(100% - 120px)',
+                                    position: 'relative'
                                 }}>
                                     <label style={{
                                         fontSize: '14px',
@@ -1064,38 +1066,55 @@ const VideoAnalysis = () => {
                                     >
                                         {renderTranscriptWithHighlights()}
                                     </div>
-                                    
-                                    {/* 저장 버튼 */}
-                                    <button
-                                        onClick={handleSaveTranscript}
-                                        style={{
-                                            marginTop: '16px',
-                                            padding: '12px 24px',
-                                            backgroundColor: '#2C2C2C',
-                                            color: '#ffffff',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            fontSize: '16px',
-                                            fontWeight: '500',
-                                            cursor: 'pointer',
-                                            fontFamily: 'Inter, sans-serif',
-                                            transition: 'background-color 0.2s ease'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.target.style.backgroundColor = '#1C1C1C';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.target.style.backgroundColor = '#2C2C2C';
-                                        }}
-                                    >
-                                        💾 대본 저장
-                                    </button>
                                 </div>
                             </>
                         )}
                     </div>
                 </div>
             </div>
+
+
+
+            {/* 대본 저장 버튼 - 대본 수정 모드일 때만 표시 */}
+            {currentView === 'transcript' && (
+                <Tooltip title="대본 저장" placement="top">
+                    <button
+                        onClick={() => {
+                            const appliedEdits = aiEdits.filter(edit => edit.applied);
+                            console.log('대본 저장:', editedTranscript);
+                            alert(`${appliedEdits.length}개의 수정사항이 적용되어 대본이 저장되었습니다.`);
+                        }}
+                        style={{
+                            position: 'fixed',
+                            bottom: 24,
+                            left: 'calc(70% + 20px)',
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            color: '#2C2C2C',
+                            border: 'none',
+                            borderRadius: '32px',
+                            padding: '12px 20px',
+                            fontSize: '16px',
+                            fontWeight: '500',
+                            cursor: 'pointer',
+                            fontFamily: 'Inter, sans-serif',
+                            zIndex: 1000,
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.target.style.backgroundColor = 'rgba(255, 255, 255, 1)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                        }}
+                    >
+                        💾 대본 저장
+                    </button>
+                </Tooltip>
+            )}
 
             {/* 플로팅 버튼 - 상태에 따라 변경 */}
             <Tooltip title={currentView === 'analysis' ? '대본 수정' : '분석 결과'} placement="left">

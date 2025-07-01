@@ -1,15 +1,19 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 import authService from '../api/authService';
 
 const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   
   // Redux에서 로그인 상태 가져오기
   const { isAuthenticated } = useSelector((state) => state.auth);
+  
+  // 현재 페이지가 설정 페이지인지 확인
+  const isSettingsPage = location.pathname === '/settings';
 
   const handleLogout = async () => {
     try {
@@ -124,7 +128,7 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
         gap: '12px'
       }}>
         {isAuthenticated ? (
-          // 로그인된 경우: 세팅, 로그아웃 버튼
+          // 로그인된 경우: 세팅/비디오, 로그아웃 버튼
           <>
             <div 
               style={{
@@ -138,7 +142,7 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
                 transition: 'all 0.3s ease',
                 background: 'transparent'
               }}
-              onClick={() => handleNavigation('/settings')}
+              onClick={() => handleNavigation(isSettingsPage ? '/dashboard' : '/settings')}
               onMouseEnter={(e) => {
                 e.target.style.background = '#f8f9fa';
                 e.target.style.color = '#000000';
@@ -150,7 +154,7 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
                 e.target.style.transform = 'translateY(0)';
               }}
             >
-              Settings
+              {isSettingsPage ? 'Video' : 'Settings'}
             </div>
             <div 
               style={{
