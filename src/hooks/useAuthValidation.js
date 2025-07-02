@@ -1,13 +1,12 @@
 import React, { useEffect, useCallback, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { logout } from '../store/slices/authSlice';
 import { useUserStore } from '../store/userStore';
 import authService from '../api/authService';
 
 const useAuthValidation = (skipRouteValidation = false) => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated } = useSelector(state => state.auth);
   const { user, clearUser } = useUserStore();
@@ -26,22 +25,21 @@ const useAuthValidation = (skipRouteValidation = false) => {
     if (logoutInProgressRef.current) return;
     
     logoutInProgressRef.current = true;
-    console.log('Performing logout...');
+    console.log('useAuthValidation: performLogout 호출, auth:unauthorized 이벤트 발생');
     
     dispatch(logout());
     clearUser();
     localStorage.removeItem('token');
     
-    // 로그인 페이지가 아닌 경우에만 리다이렉트
-    if (location.pathname !== '/login') {
-      navigate('/login', { replace: true });
-    }
+    // auth:unauthorized 이벤트 발생 (AuthProvider에서 처리)
+    window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+    console.log('useAuthValidation: auth:unauthorized 이벤트 발생 완료');
     
     // 잠시 후 플래그 리셋 (다른 컴포넌트에서 로그아웃이 필요할 수 있음)
     setTimeout(() => {
       logoutInProgressRef.current = false;
     }, 1000);
-  }, [dispatch, navigate, clearUser, location.pathname]);
+  }, [dispatch, clearUser]);
 
   // 현재 토큰 로드 함수 (Dashboard에서 가져옴)
   const loadCurrentToken = useCallback(async () => {
@@ -306,6 +304,7 @@ const useAuthValidation = (skipRouteValidation = false) => {
           
           if (response.ok) {
             const tokenInfo = await response.json();
+            console.log('Google OAuth 토큰 정보:', tokenInfo);
             
             // 토큰 만료 시간 확인
             const currentTime = Math.floor(Date.now() / 1000);
@@ -431,7 +430,7 @@ const useAuthValidation = (skipRouteValidation = false) => {
     } finally {
       isValidatingRef.current = false;
     }
-  }, [dispatch, navigate, isAuthenticated, clearUser, location.pathname, performLogout, user]);
+  }, [dispatch, isAuthenticated, clearUser, performLogout, user]);
 
   // 서버에서 토큰 검증이 필요한 경우를 위한 함수 (선택적 사용)
   const validateTokenWithServer = useCallback(async () => {

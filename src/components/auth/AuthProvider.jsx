@@ -42,9 +42,29 @@ const AuthProvider = ({ children }) => {
               console.error('AuthProvider: JWT 파싱 실패:', jwtError);
             }
           } else {
-            // Google OAuth 토큰인 경우 - API 호출하지 않음 (OAuth2RedirectHandler에서 이미 사용자 정보 설정됨)
-            console.log('Google OAuth 토큰 감지됨. API 호출 스킵.');
-            // await fetchUserInfo(); // 이 줄을 주석 처리
+            // Google OAuth 토큰인 경우 - 사용자 정보가 없으면 Google API에서 직접 가져오기
+            console.log('Google OAuth 토큰 감지됨. 사용자 정보 확인 중...');
+            
+            try {
+              const userInfoResponse = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${token}`);
+              if (userInfoResponse.ok) {
+                const userInfo = await userInfoResponse.json();
+                const userData = {
+                  email: userInfo.email,
+                  name: userInfo.name || userInfo.email.split('@')[0],
+                  picture: userInfo.picture,
+                  provider: 'GOOGLE'
+                };
+                
+                const { setUser } = useUserStore.getState();
+                setUser(userData);
+                console.log('AuthProvider: Google API에서 사용자 정보 가져오기 완료:', userData);
+              } else {
+                console.error('Google API 사용자 정보 조회 실패:', userInfoResponse.status);
+              }
+            } catch (error) {
+              console.error('Google API 사용자 정보 조회 중 오류:', error);
+            }
           }
         } catch (error) {
           console.error('Failed to load user info:', error);
@@ -64,14 +84,17 @@ const AuthProvider = ({ children }) => {
   // Setup interceptor for 401 errors
   useEffect(() => {
     const handleUnauthorized = async () => {
+      console.log('AuthProvider: auth:unauthorized 이벤트 수신, 로그아웃 및 리다이렉트 처리');
       // On 401 errors, just logout and redirect to login
       dispatch(logout());
       clearUser();
+      localStorage.removeItem('token');
       navigate('/login', { replace: true });
     };
 
     // Setup event listener for 401 errors
     window.addEventListener('auth:unauthorized', handleUnauthorized);
+    console.log('AuthProvider: auth:unauthorized 이벤트 리스너 등록 완료');
 
     return () => {
       window.removeEventListener('auth:unauthorized', handleUnauthorized);

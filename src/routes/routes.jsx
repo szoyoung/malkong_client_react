@@ -7,7 +7,6 @@ import ForgotPassword from '../pages/ForgotPassword';
 import OAuth2RedirectHandler from '../pages/OAuth2RedirectHandler';
 import Dashboard from '../pages/Dashboard';
 import VideoAnalysis from '../pages/VideoAnalysis';
-import TranscriptEditor from '../pages/TranscriptEditor';
 import PrivateRoute from './PrivateRoute';
 
 const AppRoutes = () => {
@@ -39,14 +38,6 @@ const AppRoutes = () => {
                 element={
                     <PrivateRoute>
                         <VideoAnalysis />
-                    </PrivateRoute>
-                }
-            />
-            <Route
-                path="/transcript-editor/:presentationId"
-                element={
-                    <PrivateRoute>
-                        <TranscriptEditor />
                     </PrivateRoute>
                 }
             />

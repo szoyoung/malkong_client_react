@@ -871,7 +871,7 @@ const VideoAnalysis = () => {
                             margin: '0 0 16px 0',
                             fontFamily: 'Inter, sans-serif'
                         }}>
-                            📊 종합 점수
+                            종합 점수
                         </h3>
                         <div style={{
                             display: 'flex',
@@ -987,7 +987,7 @@ const VideoAnalysis = () => {
                                     fontFamily: 'Inter, sans-serif',
                                     textAlign: 'center'
                                 }}>
-                                    🎯 상세 분석 결과
+                                    상세 분석 결과
                                 </h2>
                                 
                                 {/* HexagonChart - The main component */}

@@ -40,8 +40,13 @@ const HexagonChart = ({ data = {}, transcriptData, analysisDetails, size = 350, 
     // 애니메이션을 위한 상태
     const [animationProgress, setAnimationProgress] = useState(0);
 
-    // 애니메이션 효과
+    // 애니메이션 효과 (미리보기에서는 비활성화)
     useEffect(() => {
+        if (isPreview) {
+            setAnimationProgress(1);
+            return;
+        }
+        
         const duration = 1000; // 1초
         const startTime = Date.now();
         
@@ -57,7 +62,7 @@ const HexagonChart = ({ data = {}, transcriptData, analysisDetails, size = 350, 
         };
         
         animate();
-    }, [safeData]);
+    }, [safeData, isPreview]);
 
     // 점수에 따른 색상 반환
     const getScoreColor = (score) => {
@@ -174,15 +179,18 @@ const HexagonChart = ({ data = {}, transcriptData, analysisDetails, size = 350, 
             });
         }
 
-        // Draw center score (animated) - only if showLabels is true
-        if (showLabels) {
+        // Draw center score (animated) - always show for preview, or when showLabels is true
+        if (showLabels || isPreview) {
             const averageScore = Math.round((Object.values(safeData).reduce((a, b) => a + b, 0) / dataKeys.length) * animationProgress);
             ctx.fillStyle = colors.text;
-            ctx.font = 'bold 14px Inter, sans-serif';
+            ctx.font = isPreview ? 'bold 110px Inter, sans-serif' : 'bold 14px Inter, sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText(`${averageScore}`, centerX, centerY - 5);
-            ctx.font = '10px Inter, sans-serif';
-            ctx.fillText('평균', centerX, centerY + 10);
+            ctx.fillText(`${averageScore}`, centerX, centerY + (isPreview ? 10 : -5));
+            
+            if (!isPreview) {
+                ctx.font = '10px Inter, sans-serif';
+                ctx.fillText('평균', centerX, centerY + 10);
+            }
         }
 
     }, [safeData, activeView, animationProgress, size, showLabels, showGrid]);

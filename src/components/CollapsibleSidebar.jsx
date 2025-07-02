@@ -348,7 +348,10 @@ const CollapsibleSidebar = ({ isCollapsed }) => {
                             {topicPresentations.length > 0 ? (
                                 topicPresentations.map((presentation) => {
                                     const analysisData = analysisResults[presentation.id];
-                                    const hasAnalysis = !!analysisData;
+                                    // TODO: FastAPI 연결 후 아래 라인 수정 필요
+                                    // 현재: 영상이 있으면 목업 데이터로 육각형 표시
+                                    // 최종: 실제 분석 데이터가 있을 때만 육각형 표시 (const hasAnalysis = !!analysisData;)
+                                    const hasAnalysis = !!analysisData || !!presentation.videoUrl;
                                     
                                     return (
                                         <div
@@ -488,7 +491,8 @@ const CollapsibleSidebar = ({ isCollapsed }) => {
                                                     }}>
                                                         {hasAnalysis ? (
                                                             <HexagonChart
-                                                                data={analysisData.scores || {
+                                                                data={analysisData?.scores || {
+                                                                    // TODO: FastAPI 연결 후 이 목업 데이터 제거 필요
                                                                     voice: 75,
                                                                     speed: 75,
                                                                     anxiety: 75,
@@ -496,7 +500,7 @@ const CollapsibleSidebar = ({ isCollapsed }) => {
                                                                     pitch: 75,
                                                                     clarity: 75
                                                                 }}
-                                                                size={110}
+                                                                size={900}
                                                                 showLabels={false}
                                                                 showGrid={false}
                                                                 isPreview={true}

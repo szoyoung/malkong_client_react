@@ -33,10 +33,12 @@ import {
 import Navbar from '../components/Navbar';
 import authService from '../api/authService';
 import { logout } from '../store/slices/authSlice';
+import { useUserStore } from '../store/userStore';
 
 const Settings = () => {
     const dispatch = useDispatch();
-    const { user, isAuthenticated } = useSelector((state) => state.auth);
+    const { isAuthenticated } = useSelector((state) => state.auth);
+    const { user } = useUserStore();
     
     // 사용자 정보 상태
     const [userInfo, setUserInfo] = useState({
