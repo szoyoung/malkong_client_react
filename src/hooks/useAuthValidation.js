@@ -2,14 +2,13 @@ import React, { useEffect, useCallback, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 import { logout } from '../store/slices/authSlice';
-import { useUserStore } from '../store/userStore';
 import authService from '../api/authService';
 
 const useAuthValidation = (skipRouteValidation = false) => {
   const dispatch = useDispatch();
   const location = useLocation();
   const { isAuthenticated } = useSelector(state => state.auth);
-  const { user, clearUser } = useUserStore();
+  const user = useSelector(state => state.auth.user);
   const isValidatingRef = useRef(false);
   const lastValidationRef = useRef(0);
   const isRefreshingRef = useRef(false);
@@ -28,7 +27,6 @@ const useAuthValidation = (skipRouteValidation = false) => {
     console.log('useAuthValidation: performLogout 호출, auth:unauthorized 이벤트 발생');
     
     dispatch(logout());
-    clearUser();
     localStorage.removeItem('token');
     
     // auth:unauthorized 이벤트 발생 (AuthProvider에서 처리)
@@ -39,7 +37,7 @@ const useAuthValidation = (skipRouteValidation = false) => {
     setTimeout(() => {
       logoutInProgressRef.current = false;
     }, 1000);
-  }, [dispatch, clearUser]);
+  }, [dispatch]);
 
   // 현재 토큰 로드 함수 (Dashboard에서 가져옴)
   const loadCurrentToken = useCallback(async () => {
@@ -430,7 +428,7 @@ const useAuthValidation = (skipRouteValidation = false) => {
     } finally {
       isValidatingRef.current = false;
     }
-  }, [dispatch, isAuthenticated, clearUser, performLogout, user]);
+  }, [dispatch, isAuthenticated, performLogout, user]);
 
   // 서버에서 토큰 검증이 필요한 경우를 위한 함수 (선택적 사용)
   const validateTokenWithServer = useCallback(async () => {

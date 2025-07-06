@@ -10,40 +10,11 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { useNavigate } from 'react-router-dom';
 import authService from '../api/authService';
 import Navbar from '../components/Navbar';
-
-// Theme constants
-const theme = {
-  colors: {
-    primary: {
-      main: '#2C2C2C',
-      hover: '#1C1C1C',
-      light: '#3C3C3C',
-    },
-    text: {
-      primary: '#1E1E1E',
-      secondary: '#666666',
-      white: '#FFFFFF',
-    },
-    background: {
-      default: '#FFFFFF',
-      paper: '#F8F8F8',
-      hover: '#F5F5F5',
-    },
-    border: '#E0E0E0',
-    error: '#FF4D4F',
-  },
-  shadows: {
-    sm: '0px 2px 4px rgba(0, 0, 0, 0.05)',
-    md: '0px 4px 8px rgba(0, 0, 0, 0.1)',
-    lg: '0px 8px 16px rgba(0, 0, 0, 0.15)',
-  },
-  typography: {
-    fontFamily: {
-      primary: 'Inter, sans-serif',
-      secondary: 'Roboto, sans-serif',
-    },
-  },
-};
+import { validateEmail, validatePassword } from '../api/utils/validation';
+import useError from '../hooks/useError';
+import useLoading from '../hooks/useLoading';
+import theme from '../theme';
+import useAuthCheck from '../hooks/useAuthCheck';
 
 // Styled Components
 const PageContainer = styled(Container)({
@@ -55,7 +26,7 @@ const PageContainer = styled(Container)({
   flexDirection: 'column',
   padding: 0,
   margin: 0,
-  background: theme.colors.background.default,
+  background: theme.palette.background.default,
   paddingTop: '80px', // Navbar 높이만큼 패딩 추가
 });
 
@@ -75,7 +46,7 @@ const LeftSection = styled(Box)({
   alignItems: 'center',
   justifyContent: 'center',
   padding: '40px',
-  background: theme.colors.background.default,
+  background: theme.palette.background.default,
 });
 
 const RightSection = styled(Box)({
@@ -84,7 +55,7 @@ const RightSection = styled(Box)({
   alignItems: 'center',
   justifyContent: 'center',
   padding: '40px',
-  background: theme.colors.background.default,
+  background: theme.palette.background.default,
 });
 
 const LogoSection = styled(Box)({
@@ -95,7 +66,7 @@ const LogoSection = styled(Box)({
 });
 
 const LogoText = styled(Typography)({
-  color: theme.colors.text.primary,
+  color: theme.palette.text.primary,
   fontSize: '72px', // 크기를 더 크게 조정
   fontFamily: '"SeoulAlrim", "Noto Sans KR"', // 메인 페이지와 동일한 폰트
   fontWeight: 800, // 메인 페이지와 동일한 굵기
@@ -107,13 +78,13 @@ const ResetCard = styled(Box)({
   maxWidth: '400px',
   padding: '32px',
   borderRadius: '16px',
-  background: theme.colors.background.default,
+  background: theme.palette.background.default,
   boxShadow: theme.shadows.md,
-  border: `1px solid ${theme.colors.border}`,
+  border: `1px solid ${theme.palette.border}`,
 });
 
 const FormTitle = styled(Typography)({
-  color: theme.colors.text.primary,
+  color: theme.palette.text.primary,
   fontSize: '24px',
   fontFamily: theme.typography.fontFamily.primary,
   fontWeight: 600,
@@ -126,19 +97,19 @@ const StyledTextField = styled(TextField)({
   marginBottom: '16px',
   '& .MuiOutlinedInput-root': {
     borderRadius: '8px',
-    backgroundColor: theme.colors.background.default,
+    backgroundColor: theme.palette.background.default,
     '& fieldset': {
-      borderColor: theme.colors.border,
+      borderColor: theme.palette.border,
     },
     '&:hover fieldset': {
-      borderColor: theme.colors.primary.main,
+      borderColor: theme.palette.primary.main,
     },
     '&.Mui-focused fieldset': {
-      borderColor: theme.colors.primary.main,
+      borderColor: theme.palette.primary.main,
     },
   },
   '& .MuiInputLabel-root': {
-    color: theme.colors.text.secondary,
+    color: theme.palette.text.secondary,
   },
 });
 
@@ -146,27 +117,27 @@ const PrimaryButton = styled(Button)({
   width: '100%',
   height: '48px',
   borderRadius: '8px',
-  background: theme.colors.primary.main,
-  color: theme.colors.text.white,
+  background: theme.palette.primary.main,
+  color: theme.palette.text.white,
   fontSize: '16px',
   fontFamily: theme.typography.fontFamily.secondary,
   fontWeight: 500,
   textTransform: 'none',
   boxShadow: theme.shadows.sm,
   '&:hover': {
-    background: theme.colors.primary.hover,
+    background: theme.palette.primary.dark,
     boxShadow: theme.shadows.md,
   },
 });
 
 const LinkText = styled(Typography)({
-  color: theme.colors.text.primary,
+  color: theme.palette.text.primary,
   fontSize: '14px',
   fontFamily: theme.typography.fontFamily.primary,
   textDecoration: 'underline',
   cursor: 'pointer',
   '&:hover': {
-    color: theme.colors.primary.main,
+    color: theme.palette.primary.main,
   },
 });
 
@@ -177,57 +148,17 @@ const ForgotPassword = () => {
   const [verificationCode, setVerificationCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1); // 1: Email, 2: Verification, 3: New Password, 4: Success
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { error, setError, resetError } = useError('');
+  const { loading, setLoading } = useLoading(false);
 
-  // 로그인 상태 확인 및 리다이렉트
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    
-    // 토큰이 있고 인증된 상태라면 대시보드로 리다이렉트
-    if (token && isAuthenticated) {
-      navigate('/dashboard', { replace: true });
-      return;
-    }
-    
-    // 토큰은 있지만 Redux 상태가 인증되지 않은 경우, 토큰 유효성 확인
-    if (token && !isAuthenticated) {
-      try {
-        // JWT 토큰의 만료 시간을 클라이언트에서 직접 확인
-        const parts = token.split('.');
-        if (parts.length === 3) {
-          const payload = JSON.parse(atob(parts[1]));
-          const currentTime = Math.floor(Date.now() / 1000);
-          
-          // 토큰이 유효하다면 대시보드로 리다이렉트
-          if (payload.exp && payload.exp > currentTime) {
-            navigate('/dashboard', { replace: true });
-            return;
-          }
-        }
-      } catch (error) {
-        console.error('Token validation error:', error);
-        // 토큰이 유효하지 않으면 제거
-        localStorage.removeItem('token');
-      }
-    }
-  }, [navigate, isAuthenticated]);
-
-  const validateEmail = (email) => {
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return regex.test(email);
-  };
-
-  const validatePassword = (password) => {
-    return password.length >= 8;
-  };
+  useAuthCheck('/dashboard');
 
   const handleRequestReset = async (e) => {
     e.preventDefault();
-    setError('');
+    resetError();
 
     if (!validateEmail(email)) {
       setError('유효한 이메일 주소를 입력해주세요.');
@@ -251,7 +182,7 @@ const ForgotPassword = () => {
 
   const handleVerifyCode = async (e) => {
     e.preventDefault();
-    setError('');
+    resetError();
 
     if (!verificationCode) {
       setError('인증 코드를 입력해주세요.');
@@ -271,7 +202,7 @@ const ForgotPassword = () => {
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
-    setError('');
+    resetError();
 
     if (!validatePassword(newPassword)) {
       setError('비밀번호는 최소 8자 이상이어야 합니다.');
@@ -307,7 +238,7 @@ const ForgotPassword = () => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <EmailIcon sx={{ color: theme.colors.text.secondary }} />
+                    <EmailIcon sx={{ color: theme.palette.text.secondary }} />
                   </InputAdornment>
                 ),
               }}
@@ -323,7 +254,7 @@ const ForgotPassword = () => {
             <Typography 
               sx={{ 
                 marginBottom: '16px', 
-                color: theme.colors.text.secondary,
+                color: theme.palette.text.secondary,
                 fontSize: '14px'
               }}
             >
@@ -337,7 +268,7 @@ const ForgotPassword = () => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <NumbersIcon sx={{ color: theme.colors.text.secondary }} />
+                    <NumbersIcon sx={{ color: theme.palette.text.secondary }} />
                   </InputAdornment>
                 ),
               }}
@@ -364,7 +295,7 @@ const ForgotPassword = () => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <LockIcon sx={{ color: theme.colors.text.secondary }} />
+                    <LockIcon sx={{ color: theme.palette.text.secondary }} />
                   </InputAdornment>
                 ),
                 endAdornment: (
@@ -388,7 +319,7 @@ const ForgotPassword = () => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <LockIcon sx={{ color: theme.colors.text.secondary }} />
+                    <LockIcon sx={{ color: theme.palette.text.secondary }} />
                   </InputAdornment>
                 ),
                 endAdornment: (

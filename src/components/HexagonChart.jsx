@@ -78,7 +78,11 @@ const HexagonChart = ({ data = {}, transcriptData, analysisDetails, size = 350, 
         const ctx = canvas.getContext('2d');
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
-        const radius = Math.min(centerX, centerY) - 60;
+        // 사이드바용 미니 차트인지 확인 (size가 작고 showLabels가 false인 경우)
+        const isSidebarChart = !showLabels && size <= 180;
+        const radius = isSidebarChart 
+            ? Math.min(centerX, centerY)  // 사이드바: 최대한 크게
+            : Math.min(centerX, centerY) - 60; // 상세 분석: 적절한 여백
         const sides = 6;
 
         // Clear canvas
@@ -183,14 +187,28 @@ const HexagonChart = ({ data = {}, transcriptData, analysisDetails, size = 350, 
         if (showLabels || isPreview) {
             const averageScore = Math.round((Object.values(safeData).reduce((a, b) => a + b, 0) / dataKeys.length) * animationProgress);
             ctx.fillStyle = colors.text;
-            ctx.font = isPreview ? 'bold 110px Inter, sans-serif' : 'bold 14px Inter, sans-serif';
+            ctx.font = isPreview ? 'bold 110px Inter, sans-serif' : 'bold 18px Inter, sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText(`${averageScore}`, centerX, centerY + (isPreview ? 10 : -5));
             
             if (!isPreview) {
-                ctx.font = '10px Inter, sans-serif';
+                ctx.font = '12px Inter, sans-serif';
                 ctx.fillText('평균', centerX, centerY + 10);
             }
+        } else if (!showLabels && !isPreview && size <= 180) {
+            // 사이드바용 미니 차트에서만 중앙 점수 표시
+            const averageScore = Math.round((Object.values(safeData).reduce((a, b) => a + b, 0) / dataKeys.length) * animationProgress);
+            ctx.fillStyle = colors.text;
+            ctx.font = 'bold 32px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${averageScore}`, centerX, centerY);
+        } else if (!showLabels && !isPreview && size <= 250) {
+            // 사이드바용 미니 차트 - 중앙에 작은 점수만 표시
+            const averageScore = Math.round((Object.values(safeData).reduce((a, b) => a + b, 0) / dataKeys.length) * animationProgress);
+            ctx.fillStyle = colors.text;
+            ctx.font = 'bold 12px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${averageScore}`, centerX, centerY);
         }
 
     }, [safeData, activeView, animationProgress, size, showLabels, showGrid]);
@@ -217,7 +235,7 @@ const HexagonChart = ({ data = {}, transcriptData, analysisDetails, size = 350, 
     };
 
     // 미리보기 모드일 때는 간단한 차트만 반환
-    if (isPreview) {
+    if (isPreview || (!showLabels && size <= 180)) {
         return (
             <div style={{
                 width: size,
@@ -338,7 +356,7 @@ const HexagonChart = ({ data = {}, transcriptData, analysisDetails, size = 350, 
                             display: 'flex',
                             justifyContent: 'center',
                             alignItems: 'center',
-                            height: '280px',
+                            height: '220px',
                             marginBottom: '20px',
                             flexShrink: 0
                         }}>

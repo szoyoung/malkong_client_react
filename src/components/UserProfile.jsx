@@ -1,7 +1,8 @@
 import React from 'react';
 import { Box, Typography, Avatar, Button, Paper } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { useUserStore } from '../store/userStore';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchUserInfo } from '../store/slices/authSlice';
 
 const ProfileContainer = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
@@ -20,20 +21,13 @@ const UserAvatar = styled(Avatar)(({ theme }) => ({
 }));
 
 const UserProfile = () => {
-  // Use Zustand store for user data
-  const { user, isLoading, fetchUserInfo } = useUserStore();
+  // Use Redux store for user data
+  const user = useSelector(state => state.auth.user);
+  const dispatch = useDispatch();
 
   const handleRefresh = () => {
-    fetchUserInfo();
+    dispatch(fetchUserInfo());
   };
-
-  if (isLoading) {
-    return (
-      <ProfileContainer>
-        <Typography>사용자 정보를 불러오는 중...</Typography>
-      </ProfileContainer>
-    );
-  }
 
   if (!user) {
     return (

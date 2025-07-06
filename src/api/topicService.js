@@ -1,5 +1,5 @@
 import api from './axios';
-import { useUserStore } from '../store/userStore';
+import store from '../store';
 
 // 로컬 스토리지 키
 const TOPICS_STORAGE_KEY = 'ddorang_topics';
@@ -49,8 +49,8 @@ const generateId = () => {
 // 사용자 provider 확인 함수
 const getUserProvider = () => {
     try {
-        const userStore = useUserStore.getState();
-        return userStore.user?.provider || 'LOCAL';
+        const user = store.getState().auth.user;
+        return user?.provider || 'LOCAL';
     } catch (error) {
         return 'LOCAL';
     }

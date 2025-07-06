@@ -1,5 +1,4 @@
 import api from './axios';
-import { useUserStore } from '../store/userStore';
 import { API_ROUTES } from './constants';
 
 const API_URL = 'http://localhost:8080';
@@ -66,14 +65,6 @@ const authService = {
         const { token, email, name } = response;
         localStorage.setItem('token', token);
         
-        // Set user in Zustand store
-        const userStore = useUserStore.getState();
-        userStore.setUser({
-            email,
-            name,
-            provider: 'GOOGLE'
-        });
-        
         return {
             access_token: token,
             email,
@@ -117,11 +108,6 @@ const authService = {
 
             // JWT에서 정보를 얻었고 LOCAL provider면 백엔드 API 호출하지 않음
             if (userInfo && userInfo.provider === 'LOCAL') {
-                // Update Zustand store with user data
-                if (useUserStore) {
-                    const userStore = useUserStore.getState();
-                    userStore.setUser(userInfo);
-                }
                 return userInfo;
             }
 
@@ -138,12 +124,6 @@ const authService = {
                     };
 
                     console.log('백엔드에서 사용자 정보 조회 성공:', userData);
-
-                    // Update Zustand store with user data
-                    if (useUserStore) {
-                        const userStore = useUserStore.getState();
-                        userStore.setUser(userData);
-                    }
                     
                     return userData;
                 }
@@ -158,10 +138,6 @@ const authService = {
             
             // 마지막으로 JWT에서 얻은 정보라도 반환
             if (userInfo) {
-                if (useUserStore) {
-                    const userStore = useUserStore.getState();
-                    userStore.setUser(userInfo);
-                }
                 return userInfo;
             }
             
@@ -271,12 +247,6 @@ const authService = {
         } finally {
             // Always clear tokens from localStorage
             localStorage.removeItem('token');
-            
-            // Clear user from Zustand store
-            if (useUserStore) {
-                const userStore = useUserStore.getState();
-                userStore.clearUser();
-            }
         }
     },
 
@@ -390,11 +360,6 @@ const authService = {
             // You may need to implement this in the server
             const response = await api.put('/api/user/profile', profileData);
             
-            if (useUserStore) {
-                const userStore = useUserStore.getState();
-                userStore.setUser(response.data);
-            }
-            
             return response.data;
         } catch (error) {
             console.error('Profile update error:', error);
@@ -414,12 +379,6 @@ const authService = {
             
             // Clear all local data after successful deletion
             localStorage.removeItem('token');
-            
-            // Clear user from Zustand store
-            if (useUserStore) {
-                const userStore = useUserStore.getState();
-                userStore.clearUser();
-            }
             
             return response.data;
         } catch (error) {

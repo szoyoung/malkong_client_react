@@ -3,14 +3,12 @@ import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { Box, CircularProgress, Typography } from '@mui/material';
-import { loginSuccess } from '../store/slices/authSlice';
-import { useUserStore } from '../store/userStore';
+import { loginSuccess, setUser } from '../store/slices/authSlice';
 
 const OAuth2RedirectHandler = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const { setUser } = useUserStore();
 
     useEffect(() => {
         const handleOAuth2Callback = async () => {
@@ -50,8 +48,8 @@ const OAuth2RedirectHandler = () => {
                     user: userInfo
                 }));
 
-                // Zustand 스토어도 업데이트
-                setUser(userInfo);
+                // Redux로 사용자 정보 업데이트
+                dispatch(setUser(userInfo));
 
                 // 메인 페이지로 리다이렉트
                 navigate('/dashboard');
@@ -62,7 +60,7 @@ const OAuth2RedirectHandler = () => {
         };
 
         handleOAuth2Callback();
-    }, [location, navigate, dispatch, setUser]);
+    }, [location, navigate, dispatch]);
 
     return (
         <Box

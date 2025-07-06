@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTopicStore } from '../store/topicStore';
-import { useUserStore } from '../store/userStore';
+import { useSelector, useDispatch } from 'react-redux';
 import topicService from '../api/topicService';
 import videoAnalysisService from '../api/videoAnalysisService';
 import TopicCreator from './TopicCreator';
@@ -9,15 +8,19 @@ import TopicManager from './TopicManager';
 import PresentationManager from './PresentationManager';
 import VideoPlayer from './VideoPlayer';
 import HexagonChart from './HexagonChart';
+import { setTopics, setPresentations, setCurrentTopic, setLoading, setError, updateTopic, deleteTopic, updatePresentation, deletePresentation } from '../store/slices/topicSlice';
 
 const CollapsibleSidebar = ({ isCollapsed }) => {
     const navigate = useNavigate();
-    const { user } = useUserStore();
+    const user = useSelector(state => state.auth.user);
+    const topics = useSelector(state => state.topic.topics);
+    const dispatch = useDispatch();
     const [isPrivateExpanded, setIsPrivateExpanded] = useState(true);
     const [isTeamExpanded, setIsTeamExpanded] = useState(true);
     const [expandedTopics, setExpandedTopics] = useState(new Set());
     const [showTopicCreator, setShowTopicCreator] = useState(false);
     const [analysisResults, setAnalysisResults] = useState({});
+    const [topicPresentations, setTopicPresentations] = useState({});
 
     // 관리 모달 상태
     const [showTopicManager, setShowTopicManager] = useState(false);
@@ -26,73 +29,156 @@ const CollapsibleSidebar = ({ isCollapsed }) => {
     const [selectedPresentation, setSelectedPresentation] = useState(null);
     const [showVideoPlayer, setShowVideoPlayer] = useState(false);
 
-    const {
-        topics,
-        presentations,
-        currentTopic,
-        setTopics,
-        setPresentations,
-        setCurrentTopic,
-        getPresentationsByTopic,
-        setLoading,
-        setError,
-        updateTopic,
-        deleteTopic,
-        updatePresentation,
-        deletePresentation
-    } = useTopicStore();
+    const presentations = useSelector(state => state.topic.presentations);
+    const currentTopic = useSelector(state => state.topic.currentTopic);
 
     // 컴포넌트 마운트 시 토픽 목록 로드
     useEffect(() => {
-        if (user && user.id) {
+        // user가 null이 아니고, 식별자가 있을 때만 호출
+        if (user && (user.userId || user.id || user.email)) {
             loadTopics();
         }
     }, [user]);
 
     const loadTopics = async () => {
-        if (!user || !user.id) {
-            console.warn('사용자 정보가 없어 토픽을 로드할 수 없습니다.');
+        if (!user || !(user.userId || user.id || user.email)) {
+            console.warn('사용자 정보가 없어 토픽을 로드할 수 없습니다.', user);
             return;
         }
+        const userIdentifier = user.userId || user.id || user.email;
+        console.log('userIdentifier:', userIdentifier);
 
-        setLoading(true);
+        dispatch(setLoading(true));
         try {
-            // 사용자 식별자 결정
-            const userIdentifier = user.userId || user.id || user.email;
-            
             const result = await topicService.getTopics(userIdentifier);
             if (result.success) {
-                setTopics(result.data);
+                dispatch(setTopics(result.data));
                 
                 // 로컬 데이터 사용 시 알림
                 if (result.isLocal) {
                     console.log('로컬 토픽 데이터 사용 중');
                 }
             } else {
-                setError(result.error);
+                dispatch(setError(result.error));
             }
         } catch (error) {
-            setError('토픽을 불러오는 중 오류가 발생했습니다.');
+            dispatch(setError('토픽을 불러오는 중 오류가 발생했습니다.'));
             console.error('Load topics error:', error);
         } finally {
-            setLoading(false);
+            dispatch(setLoading(false));
         }
     };
 
     const loadPresentations = async (topicId) => {
         try {
+            console.log('Loading presentations for topic:', topicId);
             const result = await topicService.getPresentations(topicId);
             if (result.success) {
-                setPresentations(result.data);
+                console.log('Presentations loaded:', result.data);
+                
+                // 토픽별 프레젠테이션 상태 업데이트
+                setTopicPresentations(prev => ({
+                    ...prev,
+                    [topicId]: result.data
+                }));
+                
+                // Redux store도 업데이트 (기존 호환성 유지)
+                dispatch(setPresentations(result.data));
                 
                 // 각 프레젠테이션의 분석 결과 로드
                 for (const presentation of result.data) {
                     loadAnalysisResults(presentation.id);
                 }
+            } else {
+                console.error('Failed to load presentations:', result.error);
+                // 실패 시 빈 배열로 설정
+                setTopicPresentations(prev => ({
+                    ...prev,
+                    [topicId]: []
+                }));
+                dispatch(setPresentations([]));
             }
         } catch (error) {
             console.error('Load presentations error:', error);
+            // 에러 시 빈 배열로 설정
+            setTopicPresentations(prev => ({
+                ...prev,
+                [topicId]: []
+            }));
+            dispatch(setPresentations([]));
         }
+    };
+
+    // 점수 계산 헬퍼 함수들 (VideoAnalysis 페이지와 동일)
+    const calculateScore = (grade) => {
+        if (!grade) return 75;
+        
+        const gradeScores = {
+            'A+': 100, 'A': 95, 'A-': 90,
+            'B+': 85, 'B': 80, 'B-': 75,
+            'C+': 70, 'C': 65, 'C-': 60,
+            'D+': 55, 'D': 50, 'D-': 45,
+            'F': 0
+        };
+        
+        return gradeScores[grade] || 75;
+    };
+
+    const calculateVoiceScore = (data) => {
+        if (!data.intensityGrade) return 75;
+        const gradeMap = { 'A': 90, 'B': 80, 'C': 70, 'D': 60, 'F': 50 };
+        return gradeMap[data.intensityGrade] || 75;
+    };
+
+    const calculateSpeedScore = (data) => {
+        if (!data.wpmGrade) return 75;
+        const gradeMap = { 'A': 90, 'B': 80, 'C': 70, 'D': 60, 'F': 50 };
+        return gradeMap[data.wpmGrade] || 75;
+    };
+
+    const calculatePitchScore = (data) => {
+        if (!data.pitchGrade) return 75;
+        const gradeMap = { 'A': 90, 'B': 80, 'C': 70, 'D': 60, 'F': 50 };
+        return gradeMap[data.pitchGrade] || 75;
+    };
+
+    const calculateClarityScore = (data) => {
+        if (!data.pronunciationScore) return 75;
+        return Math.round(data.pronunciationScore * 100);
+    };
+
+    // Spring Boot 데이터를 표시 형식으로 변환
+    const convertSpringBootDataToDisplayFormat = (data) => {
+        if (!data) {
+            return null;
+        }
+
+        // Spring Boot 응답 데이터 변환
+        const fastApiData = {
+            intensityGrade: data.voiceAnalysis?.intensityGrade || '보통',
+            intensityDb: data.voiceAnalysis?.intensityDb,
+            intensityText: data.voiceAnalysis?.intensityText || '음성 강도가 적절합니다.',
+            pitchGrade: data.voiceAnalysis?.pitchGrade || '좋음',
+            pitchAvg: data.voiceAnalysis?.pitchAvg,
+            pitchText: data.voiceAnalysis?.pitchText || '피치 변화가 자연스럽습니다.',
+            wpmGrade: data.voiceAnalysis?.wpmGrade || '보통',
+            wpmAvg: data.voiceAnalysis?.wpmAvg,
+            wpmComment: data.voiceAnalysis?.wpmComment || '말하기 속도가 적당합니다.',
+            transcription: data.sttResult?.transcription || '',
+            pronunciationScore: data.sttResult?.pronunciationScore || 0.75
+        };
+
+        // 점수 계산
+        const scores = {
+            voice: calculateVoiceScore(fastApiData),
+            speed: calculateSpeedScore(fastApiData),
+            anxiety: 75,
+            eyeContact: 75,
+            pitch: calculatePitchScore(fastApiData),
+            clarity: calculateClarityScore(fastApiData)
+        };
+
+        return { scores };
     };
 
     const loadAnalysisResults = async (presentationId) => {
@@ -102,9 +188,13 @@ const CollapsibleSidebar = ({ isCollapsed }) => {
                 const analysisData = await videoAnalysisService.getAllAnalysisResults(presentationId);
                 if (analysisData.success) {
                     console.log('Sidebar - Analysis data loaded for:', presentationId, analysisData.data);
+                    
+                    // 데이터를 표시 형식으로 변환
+                    const convertedData = convertSpringBootDataToDisplayFormat(analysisData.data);
+                    
                     setAnalysisResults(prev => ({
                         ...prev,
-                        [presentationId]: analysisData.data
+                        [presentationId]: convertedData
                     }));
                 }
             }
@@ -114,17 +204,25 @@ const CollapsibleSidebar = ({ isCollapsed }) => {
     };
 
     const handleTopicClick = async (topic) => {
-        setCurrentTopic(topic);
-        
         // 토픽을 클릭하면 항상 확장되도록 수정
         const newExpandedTopics = new Set(expandedTopics);
         newExpandedTopics.add(topic.id);
         setExpandedTopics(newExpandedTopics);
         
-        await loadPresentations(topic.id);
+        // 현재 토픽 설정
+        dispatch(setCurrentTopic(topic));
+        
+        // 프레젠테이션 목록 로드 (이미 로드된 경우가 아니라면)
+        if (!topicPresentations[topic.id]) {
+            try {
+                await loadPresentations(topic.id);
+            } catch (error) {
+                console.error('프레젠테이션 로드 실패:', error);
+            }
+        }
     };
 
-    const handleTopicToggle = (e, topicId) => {
+    const handleTopicToggle = async (e, topicId) => {
         e.stopPropagation(); // 부모 클릭 이벤트 방지
         
         // 토픽 확장/축소 토글
@@ -133,6 +231,16 @@ const CollapsibleSidebar = ({ isCollapsed }) => {
             newExpandedTopics.delete(topicId);
         } else {
             newExpandedTopics.add(topicId);
+            // 토픽이 확장될 때 프레젠테이션 목록 로드
+            const topic = topics.find(t => t.id === topicId);
+            if (topic) {
+                dispatch(setCurrentTopic(topic));
+                try {
+                    await loadPresentations(topicId);
+                } catch (error) {
+                    console.error('프레젠테이션 로드 실패:', error);
+                }
+            }
         }
         setExpandedTopics(newExpandedTopics);
     };
@@ -167,7 +275,7 @@ const CollapsibleSidebar = ({ isCollapsed }) => {
 
     const handleTopicCreated = (newTopic) => {
         // 새로 생성된 토픽을 현재 토픽으로 설정
-        setCurrentTopic(newTopic);
+        dispatch(setCurrentTopic(newTopic));
         // 토픽이 개인 토픽이므로 Private Topics 섹션을 확장
         setIsPrivateExpanded(true);
     };
@@ -181,19 +289,19 @@ const CollapsibleSidebar = ({ isCollapsed }) => {
     };
 
     const handleTopicUpdated = (updatedTopic) => {
-        updateTopic(updatedTopic.id, updatedTopic);
+        dispatch(updateTopic(updatedTopic.id, updatedTopic));
         setSelectedTopic(updatedTopic);
         // 토픽 목록 새로고침
         loadTopics();
     };
 
     const handleTopicDeleted = (topicId) => {
-        deleteTopic(topicId);
+        dispatch(deleteTopic(topicId));
         setSelectedTopic(null);
         setShowTopicManager(false);
         // 현재 선택된 토픽이 삭제된 경우 선택 해제
         if (currentTopic?.id === topicId) {
-            setCurrentTopic(null);
+            dispatch(setCurrentTopic(null));
         }
     };
 
@@ -206,7 +314,7 @@ const CollapsibleSidebar = ({ isCollapsed }) => {
     };
 
     const handlePresentationUpdated = (updatedPresentation) => {
-        updatePresentation(updatedPresentation.id, updatedPresentation);
+        dispatch(updatePresentation(updatedPresentation.id, updatedPresentation));
         setSelectedPresentation(updatedPresentation);
         // 프레젠테이션 목록 새로고침
         if (currentTopic) {
@@ -215,9 +323,16 @@ const CollapsibleSidebar = ({ isCollapsed }) => {
     };
 
     const handlePresentationDeleted = (presentationId) => {
-        deletePresentation(presentationId);
+        dispatch(deletePresentation(presentationId));
         setSelectedPresentation(null);
         setShowPresentationManager(false);
+        // 토픽별 프레젠테이션 상태에서도 제거
+        if (currentTopic) {
+            setTopicPresentations(prev => ({
+                ...prev,
+                [currentTopic.id]: prev[currentTopic.id]?.filter(p => p.id !== presentationId) || []
+            }));
+        }
     };
 
     const handlePlayPresentation = (presentation) => {
@@ -227,7 +342,7 @@ const CollapsibleSidebar = ({ isCollapsed }) => {
     const handleCreatePresentation = (topicId) => {
         // Dashboard로 이동하여 녹화/업로드 준비
         const topic = topics.find(t => t.id === topicId);
-        setCurrentTopic(topic);
+        dispatch(setCurrentTopic(topic));
         navigate('/dashboard', { 
             state: { 
                 selectedTopic: topic,
@@ -242,9 +357,15 @@ const CollapsibleSidebar = ({ isCollapsed }) => {
     // 팀 토픽 필터링
     const teamTopics = topics.filter(topic => topic.isTeamTopic);
 
+    // Redux에서는 selector 함수로 직접 구현
+    const getPresentationsByTopic = (presentations, topicId) => {
+        return presentations.filter(presentation => presentation.topicId === topicId);
+    };
+
     const renderTopicItems = (topicList) => {
         return topicList.map((topic) => {
-            const topicPresentations = getPresentationsByTopic(topic.id);
+            // 토픽별 프레젠테이션 상태에서 가져오기
+            const presentationsForTopic = topicPresentations[topic.id] || [];
             const isExpanded = expandedTopics.has(topic.id);
             
             return (
@@ -345,13 +466,11 @@ const CollapsibleSidebar = ({ isCollapsed }) => {
                             paddingLeft: '24px',
                             marginTop: '4px'
                         }}>
-                            {topicPresentations.length > 0 ? (
-                                topicPresentations.map((presentation) => {
+                            {presentationsForTopic.length > 0 ? (
+                                presentationsForTopic.map((presentation) => {
                                     const analysisData = analysisResults[presentation.id];
-                                    // TODO: FastAPI 연결 후 아래 라인 수정 필요
-                                    // 현재: 영상이 있으면 목업 데이터로 육각형 표시
-                                    // 최종: 실제 분석 데이터가 있을 때만 육각형 표시 (const hasAnalysis = !!analysisData;)
-                                    const hasAnalysis = !!analysisData || !!presentation.videoUrl;
+                                    // 실제 분석 데이터가 있을 때만 육각형 표시
+                                    const hasAnalysis = !!analysisData && !!analysisData.scores;
                                     
                                     return (
                                         <div
@@ -418,8 +537,8 @@ const CollapsibleSidebar = ({ isCollapsed }) => {
                                                 }}>
                                                     {/* 비디오 썸네일 */}
                                                     <div style={{
-                                                        width: '160px',
-                                                        height: '120px',
+                                                        width: '200px',
+                                                        height: '150px',
                                                         backgroundColor: '#f8f9fa',
                                                         borderRadius: '8px',
                                                         border: '1px solid #e9ecef',
@@ -483,27 +602,19 @@ const CollapsibleSidebar = ({ isCollapsed }) => {
 
                                                     {/* 미니 육각형 차트 또는 분석 대기 상태 */}
                                                     <div style={{
-                                                        width: '120px',
-                                                        height: '120px',
+                                                        width: '100px',
+                                                        height: '100px',
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'center'
                                                     }}>
                                                         {hasAnalysis ? (
                                                             <HexagonChart
-                                                                data={analysisData?.scores || {
-                                                                    // TODO: FastAPI 연결 후 이 목업 데이터 제거 필요
-                                                                    voice: 75,
-                                                                    speed: 75,
-                                                                    anxiety: 75,
-                                                                    eyeContact: 75,
-                                                                    pitch: 75,
-                                                                    clarity: 75
-                                                                }}
-                                                                size={900}
+                                                                data={analysisData.scores}
+                                                                size={180}
                                                                 showLabels={false}
                                                                 showGrid={false}
-                                                                isPreview={true}
+                                                                isPreview={false}
                                                             />
                                                         ) : (
                                                             <div style={{

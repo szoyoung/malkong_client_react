@@ -3,10 +3,14 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import CollapsibleSidebar from '../components/CollapsibleSidebar';
 import HexagonChart from '../components/HexagonChart';
+import CommentSection from '../components/CommentSection';
 import videoAnalysisService from '../api/videoAnalysisService';
 import useAuthValidation from '../hooks/useAuthValidation';
 import { Box, Container, Typography, CircularProgress, Paper, Alert, Fab, Tooltip } from '@mui/material';
 import { Edit as EditIcon } from '@mui/icons-material';
+import useError from '../hooks/useError';
+import useLoading from '../hooks/useLoading';
+import theme from '../theme';
 
 // 기본 분석 데이터
 const defaultAnalysisData = {
@@ -86,8 +90,8 @@ const VideoAnalysis = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [analysisData, setAnalysisData] = useState(null);
     const [videoData, setVideoData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    const { error, setError, resetError } = useError('');
+    const { loading, setLoading } = useLoading(true);
     const [pageData, setPageData] = useState(null);
     
     // 오른쪽 영역 뷰 상태 추가
@@ -856,6 +860,9 @@ const VideoAnalysis = () => {
                         </div>
                     </div>
 
+                    {/* 댓글 섹션 */}
+                    <CommentSection presentationId={presentationId} />
+
                     {/* Overall Score Summary */}
                     <div style={{
                         backgroundColor: '#f8f9fa',
@@ -1072,8 +1079,6 @@ const VideoAnalysis = () => {
                     </div>
                 </div>
             </div>
-
-
 
             {/* 대본 저장 버튼 - 대본 수정 모드일 때만 표시 */}
             {currentView === 'transcript' && (

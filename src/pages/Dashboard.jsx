@@ -6,31 +6,20 @@ import VideoUploader from '../components/VideoUploader';
 import { CameraRecorder as CameraRecorderUtil, formatTime } from '../utils/cameraUtils';
 import topicService from '../api/topicService';
 import videoAnalysisService from '../api/videoAnalysisService';
-import { useUserStore } from '../store/userStore';
-import { useTopicStore } from '../store/topicStore';
-import useAuthValidation from '../hooks/useAuthValidation';
+import { useSelector, useDispatch } from 'react-redux';
+import { setTopics, setCurrentTopic, addPresentation } from '../store/slices/topicSlice';
+import { fetchUserInfo, setUser, logout } from '../store/slices/authSlice';
+import useError from '../hooks/useError';
+import useLoading from '../hooks/useLoading';
+import theme from '../theme';
 
 const Dashboard = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { user } = useUserStore();
-    const { 
-        currentTopic, 
-        setCurrentTopic, 
-        addPresentation,
-        topics 
-    } = useTopicStore();
-
-    // useAuthValidation hook 사용
-    const {
-        currentToken,
-        isRefreshing,
-        refreshMessage,
-        loadCurrentToken,
-        refreshAccessToken,
-        copyTokenToClipboard,
-        setRefreshMessage
-    } = useAuthValidation();
+    const user = useSelector(state => state.auth.user);
+    const topics = useSelector(state => state.topic.topics);
+    const currentTopic = useSelector(state => state.topic.currentTopic);
+    const dispatch = useDispatch();
 
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [showUploader, setShowUploader] = useState(false);
@@ -38,8 +27,7 @@ const Dashboard = () => {
     const [currentStream, setCurrentStream] = useState(null);
     const [isRecording, setIsRecording] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
-    const [error, setError] = useState(null);
-    const [showTokenPanel, setShowTokenPanel] = useState(false);
+    const { error, setError, resetError } = useError(null);
     
     // 토픽 선택 관련 상태
     const [showTopicSelector, setShowTopicSelector] = useState(false);
@@ -52,9 +40,9 @@ const Dashboard = () => {
     // URL state에서 토픽 정보 가져오기
     useEffect(() => {
         if (location.state?.selectedTopic) {
-            setCurrentTopic(location.state.selectedTopic);
+            dispatch(setCurrentTopic(location.state.selectedTopic));
         }
-    }, [location.state]);
+    }, [location.state, dispatch]);
 
     const handleNavigation = (path) => {
         navigate(path);
@@ -63,13 +51,6 @@ const Dashboard = () => {
     const toggleSidebar = () => {
         setIsSidebarCollapsed(!isSidebarCollapsed);
     };
-
-    // 컴포넌트 마운트 시 현재 토큰 로드
-    useEffect(() => {
-        if (showTokenPanel) {
-            loadCurrentToken();
-        }
-    }, [showTokenPanel, loadCurrentToken]);
 
     // 카메라 녹화 관련 함수들
     useEffect(() => {
@@ -151,7 +132,7 @@ const Dashboard = () => {
                 );
 
                 if (uploadResult.success) {
-                    addPresentation(uploadResult.data);
+                    dispatch(addPresentation(uploadResult.data));
                     
                     // 분석 페이지로 이동
                     navigate(`/video-analysis/${uploadResult.data.id}`, { 
@@ -207,7 +188,7 @@ const Dashboard = () => {
             );
 
             if (uploadResult.success) {
-                addPresentation(uploadResult.data);
+                dispatch(addPresentation(uploadResult.data));
                 setShowUploader(false);
                 
                 // 업로드 성공 시 presentationId 반환 (VideoUploader에서 분석 처리)
@@ -261,7 +242,7 @@ const Dashboard = () => {
 
     const handleTopicSelect = async (topicId) => {
         const topic = topics.find(t => t.id === topicId);
-        setCurrentTopic(topic);
+        dispatch(setCurrentTopic(topic));
         setShowTopicSelector(false);
 
         // 선택한 토픽으로 대기 중인 파일 업로드 처리
@@ -284,10 +265,10 @@ const Dashboard = () => {
     return (
         <div style={{
             width: '100%', 
-            height: '100vh', 
+            minHeight: '100vh', 
             position: 'relative', 
             background: 'white', 
-            overflow: 'hidden'
+            overflowY: 'auto'
         }}>
             {/* New Navbar with sidebar toggle */}
             <Navbar 
@@ -553,52 +534,6 @@ const Dashboard = () => {
                 </div>
             )}
 
-            {/* Token Panel Button */}
-            <div 
-                onClick={() => setShowTokenPanel(!showTokenPanel)}
-                style={{
-                    width: 100, 
-                    height: 45, 
-                    padding: 12, 
-                    left: isSidebarCollapsed ? (362 + 20) : (565 + 20), 
-                    top: 740,
-                    position: 'absolute', 
-                    background: '#4CAF50', 
-                    overflow: 'hidden', 
-                    borderRadius: 15, 
-                    outline: '1px #4CAF50 solid', 
-                    outlineOffset: '-1px', 
-                    justifyContent: 'center', 
-                    alignItems: 'center', 
-                    gap: 8, 
-                    display: 'inline-flex',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease-in-out',
-                    userSelect: 'none'
-                }}
-                onMouseEnter={(e) => {
-                    e.target.style.background = '#45a049';
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = '0px 4px 12px rgba(76, 175, 80, 0.3)';
-                }}
-                onMouseLeave={(e) => {
-                    e.target.style.background = '#4CAF50';
-                    e.target.style.transform = 'translateY(0px)';
-                    e.target.style.boxShadow = 'none';
-                }}
-            >
-                <div style={{
-                    color: '#F5F5F5', 
-                    fontSize: 16, 
-                    fontFamily: 'Inter', 
-                    fontWeight: '400', 
-                    lineHeight: 16, 
-                    wordWrap: 'break-word'
-                }}>
-                    Token
-                </div>
-            </div>
-
             {/* 토픽 선택 모달 */}
             {showTopicSelector && (
                 <div style={{
@@ -735,197 +670,6 @@ const Dashboard = () => {
                             취소
                         </button>
                     </div>
-                </div>
-            )}
-
-            {/* Token Panel */}
-            {showTokenPanel && (
-                <div style={{
-                    position: 'absolute',
-                    left: isSidebarCollapsed ? 362 : 565,
-                    top: 800,
-                    width: 800,
-                    backgroundColor: '#ffffff',
-                    borderRadius: '12px',
-                    boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.15)',
-                    padding: '20px',
-                    border: '1px solid #e9ecef',
-                    transition: 'left 0.3s ease-in-out',
-                    zIndex: 1000
-                }}>
-                    <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '16px'
-                    }}>
-                        <h3 style={{
-                            margin: 0,
-                            fontSize: '18px',
-                            fontWeight: '600',
-                            color: '#000000',
-                            fontFamily: 'Inter, sans-serif'
-                        }}>
-                            액세스 토큰 관리
-                        </h3>
-                        <button
-                            onClick={() => setShowTokenPanel(false)}
-                            style={{
-                                background: 'none',
-                                border: 'none',
-                                fontSize: '20px',
-                                cursor: 'pointer',
-                                color: '#666666',
-                                padding: '4px'
-                            }}
-                        >
-                            ✕
-                        </button>
-                    </div>
-
-                    <div style={{
-                        marginBottom: '16px'
-                    }}>
-                        <label style={{
-                            display: 'block',
-                            fontSize: '14px',
-                            fontWeight: '500',
-                            color: '#333333',
-                            marginBottom: '8px',
-                            fontFamily: 'Inter, sans-serif'
-                        }}>
-                            현재 액세스 토큰:
-                        </label>
-                        <div style={{
-                            display: 'flex',
-                            gap: '8px'
-                        }}>
-                            <textarea
-                                value={currentToken}
-                                readOnly
-                                style={{
-                                    flex: 1,
-                                    height: '80px',
-                                    padding: '12px',
-                                    border: '1px solid #e9ecef',
-                                    borderRadius: '8px',
-                                    fontSize: '12px',
-                                    fontFamily: 'monospace',
-                                    backgroundColor: '#f8f9fa',
-                                    color: '#333333',
-                                    resize: 'none',
-                                    wordBreak: 'break-all'
-                                }}
-                                placeholder="토큰이 없습니다"
-                            />
-                            <button
-                                onClick={copyTokenToClipboard}
-                                style={{
-                                    padding: '8px 12px',
-                                    backgroundColor: '#6c757d',
-                                    color: '#ffffff',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    fontSize: '12px',
-                                    cursor: 'pointer',
-                                    fontFamily: 'Inter, sans-serif',
-                                    transition: 'background-color 0.2s ease'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.target.style.backgroundColor = '#5a6268';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.target.style.backgroundColor = '#6c757d';
-                                }}
-                            >
-                                복사
-                            </button>
-                        </div>
-                    </div>
-
-                    <div style={{
-                        display: 'flex',
-                        gap: '12px',
-                        alignItems: 'center'
-                    }}>
-                        <button
-                            onClick={refreshAccessToken}
-                            disabled={isRefreshing}
-                            style={{
-                                padding: '10px 20px',
-                                backgroundColor: isRefreshing ? '#cccccc' : '#007bff',
-                                color: '#ffffff',
-                                border: 'none',
-                                borderRadius: '8px',
-                                fontSize: '14px',
-                                fontWeight: '500',
-                                cursor: isRefreshing ? 'not-allowed' : 'pointer',
-                                fontFamily: 'Inter, sans-serif',
-                                transition: 'background-color 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                                if (!isRefreshing) {
-                                    e.target.style.backgroundColor = '#0056b3';
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                if (!isRefreshing) {
-                                    e.target.style.backgroundColor = '#007bff';
-                                }
-                            }}
-                        >
-                            {isRefreshing ? '재발급 중...' : '토큰 재발급'}
-                        </button>
-
-                        <button
-                            onClick={loadCurrentToken}
-                            style={{
-                                padding: '10px 20px',
-                                backgroundColor: '#28a745',
-                                color: '#ffffff',
-                                border: 'none',
-                                borderRadius: '8px',
-                                fontSize: '14px',
-                                fontWeight: '500',
-                                cursor: 'pointer',
-                                fontFamily: 'Inter, sans-serif',
-                                transition: 'background-color 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                                e.target.style.backgroundColor = '#218838';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.target.style.backgroundColor = '#28a745';
-                            }}
-                        >
-                            새로고침
-                        </button>
-                    </div>
-
-                    {refreshMessage && (
-                        <div style={{
-                            marginTop: '12px',
-                            padding: '8px 12px',
-                            backgroundColor: 
-                                refreshMessage.includes('성공') ? '#d4edda' :
-                                refreshMessage.includes('실패') || refreshMessage.includes('만료') || refreshMessage.includes('오류') ? '#f8d7da' :
-                                refreshMessage.includes('복사') ? '#d1ecf1' : '#fff3cd',
-                            color: 
-                                refreshMessage.includes('성공') ? '#155724' :
-                                refreshMessage.includes('실패') || refreshMessage.includes('만료') || refreshMessage.includes('오류') ? '#721c24' :
-                                refreshMessage.includes('복사') ? '#0c5460' : '#856404',
-                            borderRadius: '6px',
-                            fontSize: '13px',
-                            fontFamily: 'Inter, sans-serif',
-                            border: `1px solid ${
-                                refreshMessage.includes('성공') ? '#c3e6cb' :
-                                refreshMessage.includes('실패') || refreshMessage.includes('만료') || refreshMessage.includes('오류') ? '#f5c6cb' :
-                                refreshMessage.includes('복사') ? '#bee5eb' : '#ffeaa7'
-                            }`
-                        }}>
-                            {refreshMessage}
-                        </div>
-                    )}
                 </div>
             )}
 

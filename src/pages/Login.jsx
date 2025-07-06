@@ -7,10 +7,13 @@ import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { login, clearError } from '../store/slices/authSlice';
-import { useUserStore } from '../store/userStore';
+import { login, clearError, fetchUserInfo, setUser, logout } from '../store/slices/authSlice';
 import authService from '../api/authService';
 import Navbar from '../components/Navbar';
+import useError from '../hooks/useError';
+import useLoading from '../hooks/useLoading';
+import theme from '../theme';
+import useAuthCheck from '../hooks/useAuthCheck';
 // Google 공식 로고 컴포넌트
 const GoogleLogo = ({ size = 20 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" style={{ marginRight: '8px' }}>
@@ -33,41 +36,6 @@ const GoogleLogo = ({ size = 20 }) => (
   </svg>
 );
 
-
-// Theme constants
-const theme = {
-  colors: {
-    primary: {
-      main: '#2C2C2C',
-      hover: '#1C1C1C',
-      light: '#3C3C3C',
-    },
-    text: {
-      primary: '#1E1E1E',
-      secondary: '#666666',
-      white: '#FFFFFF',
-    },
-    background: {
-      default: '#FFFFFF',
-      paper: '#F8F8F8',
-      hover: '#F5F5F5',
-    },
-    border: '#E0E0E0',
-    error: '#FF4D4F',
-  },
-  shadows: {
-    sm: '0px 2px 4px rgba(0, 0, 0, 0.05)',
-    md: '0px 4px 8px rgba(0, 0, 0, 0.1)',
-    lg: '0px 8px 16px rgba(0, 0, 0, 0.15)',
-  },
-  typography: {
-    fontFamily: {
-      primary: 'Inter, sans-serif',
-      secondary: 'Roboto, sans-serif',
-    },
-  },
-};
-
 // Styled Components
 const PageContainer = styled(Container)({
   minHeight: '100vh',
@@ -78,7 +46,7 @@ const PageContainer = styled(Container)({
   flexDirection: 'column',
   padding: 0,
   margin: 0,
-  background: theme.colors.background.default,
+  background: theme.palette.background.default,
   paddingTop: '80px', // Navbar 높이만큼 패딩 추가
 });
 
@@ -98,7 +66,7 @@ const LeftSection = styled(Box)({
   alignItems: 'center',
   justifyContent: 'center',
   padding: '40px',
-  background: theme.colors.background.default,
+  background: theme.palette.background.default,
 });
 
 const RightSection = styled(Box)({
@@ -107,7 +75,7 @@ const RightSection = styled(Box)({
   alignItems: 'center',
   justifyContent: 'center',
   padding: '40px',
-  background: theme.colors.background.default,
+  background: theme.palette.background.default,
 });
 
 const LogoSection = styled(Box)({
@@ -118,7 +86,7 @@ const LogoSection = styled(Box)({
 });
 
 const LogoText = styled(Typography)({
-  color: theme.colors.text.primary,
+  color: theme.palette.text.primary,
   fontSize: '72px', // 크기를 더 크게 조정
   fontFamily: '"SeoulAlrim", "Noto Sans KR"', // 메인 페이지와 동일한 폰트
   fontWeight: 800, // 메인 페이지와 동일한 굵기
@@ -130,13 +98,13 @@ const LoginCard = styled(Box)({
   maxWidth: '400px',
   padding: '32px',
   borderRadius: '16px',
-  background: theme.colors.background.default,
+  background: theme.palette.background.default,
   boxShadow: theme.shadows.md,
-  border: `1px solid ${theme.colors.border}`,
+  border: '1px solid #E0E0E0',
 });
 
 const FormTitle = styled(Typography)({
-  color: theme.colors.text.primary,
+  color: theme.palette.text.primary,
   fontSize: '24px',
   fontFamily: theme.typography.fontFamily.primary,
   fontWeight: 600,
@@ -149,19 +117,19 @@ const StyledTextField = styled(TextField)({
   marginBottom: '16px',
   '& .MuiOutlinedInput-root': {
     borderRadius: '8px',
-    backgroundColor: theme.colors.background.default,
+    backgroundColor: theme.palette.background.default,
     '& fieldset': {
-      borderColor: theme.colors.border,
+      borderColor: theme.palette.border,
     },
     '&:hover fieldset': {
-      borderColor: theme.colors.primary.main,
+      borderColor: theme.palette.primary.main,
     },
     '&.Mui-focused fieldset': {
-      borderColor: theme.colors.primary.main,
+      borderColor: theme.palette.primary.main,
     },
   },
   '& .MuiInputLabel-root': {
-    color: theme.colors.text.secondary,
+    color: theme.palette.text.secondary,
   },
 });
 
@@ -169,15 +137,15 @@ const PrimaryButton = styled(Button)({
   width: '100%',
   height: '48px',
   borderRadius: '8px',
-  background: theme.colors.primary.main,
-  color: theme.colors.text.white,
+  background: theme.palette.primary.main,
+  color: '#FFFFFF',
   fontSize: '16px',
   fontFamily: theme.typography.fontFamily.secondary,
   fontWeight: 500,
   textTransform: 'none',
   boxShadow: theme.shadows.sm,
   '&:hover': {
-    background: theme.colors.primary.hover,
+    background: theme.palette.primary.dark,
     boxShadow: theme.shadows.md,
   },
 });
@@ -186,27 +154,27 @@ const GoogleButton = styled(Button)({
   width: '100%',
   height: '48px',
   borderRadius: '8px',
-  background: theme.colors.background.default,
-  color: theme.colors.text.primary,
+  background: theme.palette.background.default,
+  color: theme.palette.text.primary,
   fontSize: '16px',
   fontFamily: theme.typography.fontFamily.secondary,
   fontWeight: 500,
   textTransform: 'none',
-  border: `1px solid ${theme.colors.border}`,
+  border: '1px solid #E0E0E0',
   marginTop: '16px',
   '&:hover': {
-    background: theme.colors.background.hover,
+    background: theme.palette.background.default,
   },
 });
 
 const LinkText = styled(Typography)({
-  color: theme.colors.text.primary,
+  color: theme.palette.text.primary,
   fontSize: '14px',
   fontFamily: theme.typography.fontFamily.primary,
   textDecoration: 'underline',
   cursor: 'pointer',
   '&:hover': {
-    color: theme.colors.primary.main,
+    color: theme.palette.primary.main,
   },
 });
 
@@ -229,7 +197,7 @@ const LoginForm = ({ email, setEmail, password, setPassword, onSubmit, navigate,
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
-              <EmailIcon sx={{ color: theme.colors.text.secondary }} />
+              <EmailIcon sx={{ color: theme.palette.text.secondary }} />
             </InputAdornment>
           ),
         }}
@@ -244,7 +212,7 @@ const LoginForm = ({ email, setEmail, password, setPassword, onSubmit, navigate,
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
-              <LockIcon sx={{ color: theme.colors.text.secondary }} />
+              <LockIcon sx={{ color: theme.palette.text.secondary }} />
             </InputAdornment>
           ),
           endAdornment: (
@@ -298,48 +266,15 @@ const Login = () => {
   const dispatch = useDispatch();
   
   // Get auth state from Redux
-  const { loading, error, isAuthenticated } = useSelector((state) => state.auth);
+  const { loading, error, isAuthenticated, user } = useSelector((state) => state.auth);
   
-  // Get user state from Zustand
-  const fetchUserInfo = useUserStore(state => state.fetchUserInfo);
-
   // Clear errors on component mount
   useEffect(() => {
     dispatch(clearError());
   }, [dispatch]);
 
   // Redirect if already authenticated
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    
-    // 토큰이 있고 인증된 상태라면 대시보드로 리다이렉트
-    if (token && isAuthenticated) {
-      navigate('/dashboard', { replace: true });
-      return;
-    }
-    
-    // 토큰은 있지만 Redux 상태가 인증되지 않은 경우, 토큰 유효성 확인
-    if (token && !isAuthenticated) {
-      try {
-        // JWT 토큰의 만료 시간을 클라이언트에서 직접 확인
-        const parts = token.split('.');
-        if (parts.length === 3) {
-          const payload = JSON.parse(atob(parts[1]));
-          const currentTime = Math.floor(Date.now() / 1000);
-          
-          // 토큰이 유효하다면 대시보드로 리다이렉트
-          if (payload.exp && payload.exp > currentTime) {
-            navigate('/dashboard', { replace: true });
-            return;
-          }
-        }
-      } catch (error) {
-        console.error('Token validation error:', error);
-        // 토큰이 유효하지 않으면 제거
-        localStorage.removeItem('token');
-      }
-    }
-  }, [isAuthenticated, navigate]);
+  useAuthCheck('/dashboard');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -369,8 +304,7 @@ const Login = () => {
             };
             
             // Set user info directly without API call
-            const { setUser } = useUserStore.getState();
-            setUser(userData);
+            dispatch(setUser(userData));
             
             console.log('일반 로그인 성공, 사용자 정보 설정 완료:', userData);
           } else {
@@ -386,8 +320,7 @@ const Login = () => {
             provider: 'LOCAL'
           };
           
-          const { setUser } = useUserStore.getState();
-          setUser(userData);
+          dispatch(setUser(userData));
           
           console.log('토큰 파싱 실패, 기본 사용자 정보 설정:', userData);
         }
@@ -400,8 +333,7 @@ const Login = () => {
           provider: 'LOCAL'
         };
         
-        const { setUser } = useUserStore.getState();
-        setUser(userData);
+        dispatch(setUser(userData));
       }
       
       // Navigation happens in the useEffect that watches isAuthenticated

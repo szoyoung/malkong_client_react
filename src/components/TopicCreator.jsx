@@ -13,27 +13,28 @@ import {
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import topicService from '../api/topicService';
-import { useTopicStore } from '../store/topicStore';
-import { useUserStore } from '../store/userStore';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchUserInfo } from '../store/slices/authSlice';
+import { setTopics } from '../store/slices/topicSlice';
 
 const TopicCreator = ({ open, onClose, onTopicCreated }) => {
     const [title, setTitle] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     
-    const { setTopics } = useTopicStore();
-    const { user, fetchUserInfo } = useUserStore();
+    const user = useSelector(state => state.auth.user);
+    const dispatch = useDispatch();
 
     // 컴포넌트가 열릴 때 사용자 정보 확인
     useEffect(() => {
         if (open && (!user || !user.id)) {
             console.log('사용자 정보 없음, 다시 로드 시도:', user);
-            fetchUserInfo().catch(error => {
+            dispatch(fetchUserInfo()).catch(error => {
                 console.error('사용자 정보 로드 실패:', error);
                 setError('사용자 정보를 불러올 수 없습니다. 다시 로그인해주세요.');
             });
         }
-    }, [open, user, fetchUserInfo]);
+    }, [open, user, dispatch]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -105,7 +106,7 @@ const TopicCreator = ({ open, onClose, onTopicCreated }) => {
                     // 서버 생성 성공 시 토픽 목록 새로고침
                     const topicsResult = await topicService.getTopics(userIdentifier);
                     if (topicsResult.success) {
-                        setTopics(topicsResult.data);
+                        dispatch(setTopics(topicsResult.data));
                     }
                 }
                 

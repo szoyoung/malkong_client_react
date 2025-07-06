@@ -32,13 +32,15 @@ import {
 } from '@mui/icons-material';
 import Navbar from '../components/Navbar';
 import authService from '../api/authService';
-import { logout } from '../store/slices/authSlice';
-import { useUserStore } from '../store/userStore';
+import { logout as authLogout, fetchUserInfo, setUser } from '../store/slices/authSlice';
+import useError from '../hooks/useError';
+import useLoading from '../hooks/useLoading';
+import theme from '../theme';
 
 const Settings = () => {
     const dispatch = useDispatch();
     const { isAuthenticated } = useSelector((state) => state.auth);
-    const { user } = useUserStore();
+    const user = useSelector(state => state.auth.user);
     
     // 사용자 정보 상태
     const [userInfo, setUserInfo] = useState({
@@ -56,9 +58,9 @@ const Settings = () => {
     
     // UI 상태
     const [isEditingProfile, setIsEditingProfile] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const { error: globalError, setError: setGlobalError, resetError } = useError('');
+    const { loading, setLoading } = useLoading(false);
     const [message, setMessage] = useState('');
-    const [error, setError] = useState('');
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     
     // 알림 설정
@@ -80,7 +82,7 @@ const Settings = () => {
 
     const handleProfileUpdate = async () => {
         setLoading(true);
-        setError('');
+        setGlobalError('');
         setMessage('');
         
         try {
@@ -88,7 +90,7 @@ const Settings = () => {
             setMessage('프로필이 성공적으로 업데이트되었습니다.');
             setIsEditingProfile(false);
         } catch (err) {
-            setError(err.message || '프로필 업데이트에 실패했습니다.');
+            setGlobalError(err.message || '프로필 업데이트에 실패했습니다.');
         } finally {
             setLoading(false);
         }
@@ -96,17 +98,17 @@ const Settings = () => {
 
     const handlePasswordChange = async () => {
         if (passwordData.newPassword !== passwordData.confirmPassword) {
-            setError('새 비밀번호가 일치하지 않습니다.');
+            setGlobalError('새 비밀번호가 일치하지 않습니다.');
             return;
         }
         
         if (passwordData.newPassword.length < 6) {
-            setError('비밀번호는 최소 6자 이상이어야 합니다.');
+            setGlobalError('비밀번호는 최소 6자 이상이어야 합니다.');
             return;
         }
 
         setLoading(true);
-        setError('');
+        setGlobalError('');
         setMessage('');
         
         try {
@@ -118,7 +120,7 @@ const Settings = () => {
                 confirmPassword: ''
             });
         } catch (err) {
-            setError(err.message || '비밀번호 변경에 실패했습니다.');
+            setGlobalError(err.message || '비밀번호 변경에 실패했습니다.');
         } finally {
             setLoading(false);
         }
@@ -128,10 +130,10 @@ const Settings = () => {
         setLoading(true);
         try {
             await authService.deleteAccount();
-            dispatch(logout());
+            dispatch(authLogout());
             setMessage('계정이 성공적으로 삭제되었습니다.');
         } catch (err) {
-            setError(err.message || '계정 삭제에 실패했습니다.');
+            setGlobalError(err.message || '계정 삭제에 실패했습니다.');
         } finally {
             setLoading(false);
             setDeleteDialogOpen(false);
@@ -154,9 +156,9 @@ const Settings = () => {
                     </Alert>
                 )}
 
-                {error && (
+                {globalError && (
                     <Alert severity="error" sx={{ mb: 2 }}>
-                        {error}
+                        {globalError}
                     </Alert>
                 )}
 

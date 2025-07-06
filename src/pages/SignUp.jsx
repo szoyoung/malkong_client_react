@@ -14,38 +14,11 @@ import { styled } from '@mui/material/styles';
 import { AUTH_ROUTES } from '../api/auth';
 import authService from '../api/authService';
 import Navbar from '../components/Navbar';
-
-// 로그인과 동일한 테마
-const theme = {
-  colors: {
-    primary: {
-      main: '#2C2C2C',
-      hover: '#1C1C1C',
-    },
-    text: {
-      primary: '#1E1E1E',
-      secondary: '#666666',
-      white: '#FFFFFF',
-    },
-    background: {
-      default: '#FFFFFF',
-      paper: '#F8F8F8',
-      hover: '#F5F5F5',
-    },
-    border: '#E0E0E0',
-    error: '#FF4D4F',
-  },
-  shadows: {
-    sm: '0px 2px 4px rgba(0, 0, 0, 0.05)',
-    md: '0px 4px 8px rgba(0, 0, 0, 0.1)',
-  },
-  typography: {
-    fontFamily: {
-      primary: 'Inter, sans-serif',
-      secondary: 'Roboto, sans-serif',
-    },
-  },
-};
+import { validateEmail, validatePassword } from '../api/utils/validation';
+import useError from '../hooks/useError';
+import useLoading from '../hooks/useLoading';
+import theme from '../theme';
+import useAuthCheck from '../hooks/useAuthCheck';
 
 const PageContainer = styled(Container)({
   minHeight: '100vh',
@@ -56,7 +29,7 @@ const PageContainer = styled(Container)({
   flexDirection: 'column',
   padding: 0,
   margin: 0,
-  background: theme.colors.background.default,
+  background: theme.palette.background.default,
   overflowX: 'hidden',
   paddingTop: '80px',
 });
@@ -77,7 +50,7 @@ const LeftSection = styled(Box)({
   alignItems: 'center',
   justifyContent: 'center',
   padding: '40px',
-  background: theme.colors.background.default,
+  background: theme.palette.background.default,
 });
 
 const RightSection = styled(Box)({
@@ -86,7 +59,7 @@ const RightSection = styled(Box)({
   alignItems: 'center',
   justifyContent: 'center',
   padding: '40px',
-  background: theme.colors.background.default,
+  background: theme.palette.background.default,
 });
 
 const LogoSection = styled(Box)({
@@ -97,7 +70,7 @@ const LogoSection = styled(Box)({
 });
 
 const LogoText = styled(Typography)({
-  color: theme.colors.text.primary,
+  color: theme.palette.text.primary,
   fontSize: '72px', // 크기를 더 크게 조정
   fontFamily: '"SeoulAlrim", "Noto Sans KR"', // 메인 페이지와 동일한 폰트
   fontWeight: 800, // 메인 페이지와 동일한 굵기
@@ -109,13 +82,13 @@ const SignUpCard = styled(Box)({
   maxWidth: '400px',
   padding: '32px',
   borderRadius: '16px',
-  background: theme.colors.background.default,
+  background: theme.palette.background.default,
   boxShadow: theme.shadows.md,
-  border: `1px solid ${theme.colors.border}`,
+  border: `1px solid ${theme.palette.border}`,
 });
 
 const FormTitle = styled(Typography)({
-  color: theme.colors.text.primary,
+  color: theme.palette.text.primary,
   fontSize: '24px',
   fontFamily: theme.typography.fontFamily.primary,
   fontWeight: 600,
@@ -128,19 +101,19 @@ const StyledTextField = styled(TextField)({
   marginBottom: '16px',
   '& .MuiOutlinedInput-root': {
     borderRadius: '8px',
-    backgroundColor: theme.colors.background.default,
+    backgroundColor: theme.palette.background.default,
     '& fieldset': {
-      borderColor: theme.colors.border,
+      borderColor: theme.palette.border,
     },
     '&:hover fieldset': {
-      borderColor: theme.colors.primary.main,
+      borderColor: theme.palette.primary.main,
     },
     '&.Mui-focused fieldset': {
-      borderColor: theme.colors.primary.main,
+      borderColor: theme.palette.primary.main,
     },
   },
   '& .MuiInputLabel-root': {
-    color: theme.colors.text.secondary,
+    color: theme.palette.text.secondary,
   },
 });
 
@@ -148,8 +121,8 @@ const PrimaryButton = styled(Button)({
   width: '100%',
   height: '48px',
   borderRadius: '8px',
-  background: theme.colors.primary.main,
-  color: theme.colors.text.white,
+  background: theme.palette.primary.main,
+  color: theme.palette.text.white,
   fontSize: '16px',
   fontFamily: theme.typography.fontFamily.secondary,
   fontWeight: 500,
@@ -157,7 +130,7 @@ const PrimaryButton = styled(Button)({
   boxShadow: theme.shadows.sm,
   marginTop: '16px',
   '&:hover': {
-    background: theme.colors.primary.hover,
+    background: theme.palette.primary.dark,
     boxShadow: theme.shadows.md,
   },
 });
@@ -169,22 +142,22 @@ const OutlinedButton = styled(Button)({
   fontFamily: theme.typography.fontFamily.secondary,
   fontWeight: 500,
   textTransform: 'none',
-  border: `1px solid ${theme.colors.border}`,
-  background: theme.colors.background.default,
-  color: theme.colors.text.primary,
+  border: `1px solid ${theme.palette.border}`,
+  background: theme.palette.background.default,
+  color: theme.palette.text.primary,
   '&:hover': {
-    background: theme.colors.background.hover,
+    background: theme.palette.background.default,
   },
 });
 
 const LinkText = styled(Typography)({
-  color: theme.colors.text.primary,
+  color: theme.palette.text.primary,
   fontSize: '14px',
   fontFamily: theme.typography.fontFamily.primary,
   textDecoration: 'underline',
   cursor: 'pointer',
   '&:hover': {
-    color: theme.colors.primary.main,
+    color: theme.palette.primary.main,
   },
 });
 
@@ -198,43 +171,12 @@ const SignUp = () => {
     name: ''
   });
   const [verificationCode, setVerificationCode] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { error, setError, resetError } = useError('');
+  const { loading, setLoading } = useLoading(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [isSendingCode, setIsSendingCode] = useState(false);
 
-  // 로그인 상태 확인 및 리다이렉트
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    
-    // 토큰이 있고 인증된 상태라면 대시보드로 리다이렉트
-    if (token && isAuthenticated) {
-      navigate('/dashboard', { replace: true });
-      return;
-    }
-    
-    // 토큰은 있지만 Redux 상태가 인증되지 않은 경우, 토큰 유효성 확인
-    if (token && !isAuthenticated) {
-      try {
-        // JWT 토큰의 만료 시간을 클라이언트에서 직접 확인
-        const parts = token.split('.');
-        if (parts.length === 3) {
-          const payload = JSON.parse(atob(parts[1]));
-          const currentTime = Math.floor(Date.now() / 1000);
-          
-          // 토큰이 유효하다면 대시보드로 리다이렉트
-          if (payload.exp && payload.exp > currentTime) {
-            navigate('/dashboard', { replace: true });
-            return;
-          }
-        }
-      } catch (error) {
-        console.error('Token validation error:', error);
-        // 토큰이 유효하지 않으면 제거
-        localStorage.removeItem('token');
-      }
-    }
-  }, [navigate, isAuthenticated]);
+  useAuthCheck('/dashboard');
 
   const handleChange = (e) => {
     const { name, value } = e.target;

@@ -1,8 +1,7 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { logout } from '../../store/slices/authSlice';
-import { useUserStore } from '../../store/userStore';
+import { logout, fetchUserInfo, setUser } from '../../store/slices/authSlice';
 
 /**
  * AuthProvider handles authentication state across the application
@@ -12,8 +11,7 @@ const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
   const { isAuthenticated } = useSelector(state => state.auth);
   
-  // Get user state and functions from Zustand
-  const { user, fetchUserInfo, clearUser } = useUserStore();
+  const user = useSelector(state => state.auth.user);
 
   // Fetch user info if authenticated but no user data
   useEffect(() => {
@@ -35,8 +33,7 @@ const AuthProvider = ({ children }) => {
               };
               
               // Set user info directly
-              const { setUser } = useUserStore.getState();
-              setUser(userData);
+              dispatch(setUser(userData));
               console.log('AuthProvider: JWT 토큰에서 사용자 정보 추출 완료');
             } catch (jwtError) {
               console.error('AuthProvider: JWT 파싱 실패:', jwtError);
@@ -56,8 +53,7 @@ const AuthProvider = ({ children }) => {
                   provider: 'GOOGLE'
                 };
                 
-                const { setUser } = useUserStore.getState();
-                setUser(userData);
+                dispatch(setUser(userData));
                 console.log('AuthProvider: Google API에서 사용자 정보 가져오기 완료:', userData);
               } else {
                 console.error('Google API 사용자 정보 조회 실패:', userInfoResponse.status);
@@ -79,7 +75,7 @@ const AuthProvider = ({ children }) => {
     const timeoutId = setTimeout(loadUserInfo, 100);
     
     return () => clearTimeout(timeoutId);
-  }, [dispatch, isAuthenticated, user, navigate, fetchUserInfo, clearUser]);
+  }, [dispatch, isAuthenticated, user, navigate]);
 
   // Setup interceptor for 401 errors
   useEffect(() => {
@@ -87,7 +83,6 @@ const AuthProvider = ({ children }) => {
       console.log('AuthProvider: auth:unauthorized 이벤트 수신, 로그아웃 및 리다이렉트 처리');
       // On 401 errors, just logout and redirect to login
       dispatch(logout());
-      clearUser();
       localStorage.removeItem('token');
       navigate('/login', { replace: true });
     };
@@ -99,7 +94,7 @@ const AuthProvider = ({ children }) => {
     return () => {
       window.removeEventListener('auth:unauthorized', handleUnauthorized);
     };
-  }, [dispatch, navigate, clearUser]);
+  }, [dispatch, navigate]);
 
   return <>{children}</>;
 };

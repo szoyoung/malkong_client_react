@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import Navbar from '../components/Navbar';
+import useAuthCheck from '../hooks/useAuthCheck';
 
 const Main = () => {
   const navigate = useNavigate();
@@ -18,32 +19,7 @@ const Main = () => {
   const sectionRefs = useRef([]);
 
   // 로그인 상태 확인 및 리다이렉트
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    
-    if (token && isAuthenticated) {
-      navigate('/dashboard', { replace: true });
-      return;
-    }
-    
-    if (token && !isAuthenticated) {
-      try {
-        const parts = token.split('.');
-        if (parts.length === 3) {
-          const payload = JSON.parse(atob(parts[1]));
-          const currentTime = Math.floor(Date.now() / 1000);
-          
-          if (payload.exp && payload.exp > currentTime) {
-            navigate('/dashboard', { replace: true });
-            return;
-          }
-        }
-      } catch (error) {
-        console.error('Token validation error:', error);
-        localStorage.removeItem('token');
-      }
-    }
-  }, [navigate, isAuthenticated]);
+  useAuthCheck('/dashboard');
 
   // 순차 애니메이션: 왼쪽 요소들 동시에 → 오른쪽 텍스트들 순차적으로
   useEffect(() => {
