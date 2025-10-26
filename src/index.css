@@ -29,3 +29,16 @@ code {
   font-style: normal;
   font-display: swap;
 }
+
+/* 분석 진행 상태 애니메이션 */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}

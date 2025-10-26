@@ -99,7 +99,16 @@ const videoAnalysisService = {
     // 모든 분석 결과 조회
     getAllAnalysisResults: async (presentationId) => {
         try {
-            const response = await api.get(`/api/video-analysis/results/${presentationId}`);
+            // 캐시 무시하고 최신 데이터 가져오기
+            const response = await api.get(`/api/video-analysis/results/${presentationId}`, {
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                },
+                params: {
+                    _t: Date.now() // 타임스탬프 추가로 캐시 무시
+                }
+            });
             return {
                 success: true,
                 data: response.data
@@ -134,6 +143,111 @@ const videoAnalysisService = {
                 error: error.response?.data?.message || '분석 결과 존재 여부를 확인할 수 없습니다.'
             };
         }
+    },
+
+    // 비동기 영상 분석 시작
+    startAsyncVideoAnalysis: async (presentationId, videoFile) => {
+        try {
+            const formData = new FormData();
+            formData.append('videoFile', videoFile);
+
+            const response = await api.post(`/api/presentations/${presentationId}/video/async`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+                timeout: 30000, // 30초 타임아웃 (분석 시작만)
+            });
+
+            return {
+                success: true,
+                data: response.data
+            };
+        } catch (error) {
+            console.error('비동기 영상 분석 시작 실패:', error);
+            return {
+                success: false,
+                error: error.response?.data?.message || '영상 분석을 시작할 수 없습니다.'
+            };
+        }
+    },
+
+    // 분석 진행 상태 조회
+    getAnalysisProgress: async (jobId) => {
+        try {
+            const response = await api.get(`/api/video-analysis/${jobId}/progress`);
+            return {
+                success: true,
+                data: response.data
+            };
+        } catch (error) {
+            console.error('분석 진행 상태 조회 실패:', error);
+            return {
+                success: false,
+                error: error.response?.data?.message || '분석 진행 상태를 확인할 수 없습니다.'
+            };
+        }
+    },
+
+    // 분석 결과 폴링 (자동 재시도)
+    pollAnalysisResult: async (jobId, onProgress = null, maxAttempts = 240) => {
+        let attempts = 0;
+        
+        return new Promise((resolve, reject) => {
+            const poll = async () => {
+                try {
+                    const result = await videoAnalysisService.getAnalysisProgress(jobId);
+                    
+                    if (!result.success) {
+                        reject(new Error(result.error));
+                        return;
+                    }
+
+                    const { status, progress, message, analysisResult } = result.data;
+                    
+                    // 진행 상태 콜백 호출
+                    if (onProgress) {
+                        onProgress({ status, progress, message, analysisResult });
+                    }
+
+                    if (status === 'completed') {
+                        resolve({
+                            success: true,
+                            data: analysisResult
+                        });
+                        return;
+                    }
+
+                    if (status === 'failed' || status === 'error') {
+                        reject(new Error(message || '분석이 실패했습니다.'));
+                        return;
+                    }
+
+                    // 5초 후 다시 시도
+                    attempts++;
+                    if (attempts >= maxAttempts) {
+                        reject(new Error('분석 시간이 초과되었습니다.'));
+                        return;
+                    }
+
+                    setTimeout(poll, 5000);
+                } catch (error) {
+                    reject(error);
+                }
+            };
+
+            poll();
+        });
+    },
+
+    // 청크 업로드 진행률 업데이트 (시뮬레이션)
+    updateChunkProgress: (current, total) => {
+        // 실제로는 WebSocket이나 Server-Sent Events를 사용하는 것이 좋지만,
+        // 현재는 시뮬레이션으로 구현
+        return {
+            current,
+            total,
+            percentage: Math.round((current / total) * 100)
+        };
     }
 };
 

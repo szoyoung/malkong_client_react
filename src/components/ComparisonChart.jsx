@@ -5,24 +5,54 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
     const canvasRef = useRef(null);
 
     // 데이터 준비 (Hook 규칙을 위해 early return 전에 처리)
-    const hasData = comparisonData && comparisonData.comparisonData;
-    const data = hasData ? comparisonData.comparisonData : null;
+    const hasData = comparisonData && (comparisonData.comparisonData || comparisonData.presentation1);
+    const data = hasData ? (comparisonData.comparisonData || comparisonData) : null;
     const metrics1 = data?.presentation1 || {};
     const metrics2 = data?.presentation2 || {};
     
     console.log('=== ComparisonChart 데이터 확인 ===');
     console.log('comparisonData:', comparisonData);
+    console.log('comparisonData 타입:', typeof comparisonData);
+    console.log('comparisonData 키들:', comparisonData ? Object.keys(comparisonData) : 'null');
+    console.log('hasData:', hasData);
+    console.log('data:', data);
     console.log('metrics1:', metrics1);
     console.log('metrics2:', metrics2);
     console.log('발음 점수1:', metrics1.pronunciationScore);
     console.log('발음 점수2:', metrics2.pronunciationScore);
     console.log('AI 분석 결과 확인:');
+    console.log('- improvements_made:', comparisonData?.improvements_made);
+    console.log('- areas_to_improve:', comparisonData?.areas_to_improve);
+    console.log('- overall_feedback:', comparisonData?.overall_feedback);
     console.log('- strengths_comparison:', comparisonData?.strengths_comparison);
     console.log('- strengthsComparison:', comparisonData?.strengthsComparison);
     console.log('- improvement_suggestions:', comparisonData?.improvement_suggestions);
     console.log('- improvementSuggestions:', comparisonData?.improvementSuggestions);
-    console.log('- overall_feedback:', comparisonData?.overall_feedback);
     console.log('- overallFeedback:', comparisonData?.overallFeedback);
+    
+    // comparisonSummary 필드 확인
+    console.log('- comparisonSummary:', comparisonData?.comparisonSummary);
+    if (comparisonData?.comparisonSummary) {
+        try {
+            const parsedSummary = JSON.parse(comparisonData.comparisonSummary);
+            console.log('- parsed comparisonSummary:', parsedSummary);
+            console.log('- parsed improvements_made:', parsedSummary?.improvements_made);
+            console.log('- parsed areas_to_improve:', parsedSummary?.areas_to_improve);
+            console.log('- parsed overall_feedback:', parsedSummary?.overall_feedback);
+        } catch (e) {
+            console.log('- comparisonSummary 파싱 실패:', e);
+        }
+    }
+    
+    // comparisonSummary에서 AI 분석 결과 파싱
+    let aiAnalysisData = {};
+    if (comparisonData?.comparisonSummary) {
+        try {
+            aiAnalysisData = JSON.parse(comparisonData.comparisonSummary);
+        } catch (e) {
+            console.log('comparisonSummary 파싱 실패:', e);
+        }
+    }
     
     const pres1 = presentation1 || comparisonData?.presentation1;
     const pres2 = presentation2 || comparisonData?.presentation2;
@@ -68,31 +98,42 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
         return 'E';
     };
 
-    // 한글 등급을 영문 등급으로 변환
-    const convertKoreanGradeToEnglish = (grade) => {
-        const gradeMap = {
-            '매우 좋음': 'A',
-            '좋음': 'B',
-            '보통': 'C',
-            '나쁨': 'D',
-            '매우 나쁨': 'E'
-        };
+
+    // 감정 분석 데이터 파싱
+    const parseEmotionAnalysis = (emotionAnalysisJson) => {
+        if (!emotionAnalysisJson) return null;
         
-        // 이미 영문이면 그대로 반환
-        if (['A', 'B', 'C', 'D', 'E'].includes(grade)) {
-            return grade;
+        try {
+            return JSON.parse(emotionAnalysisJson);
+        } catch (e) {
+            console.log('감정 분석 데이터 파싱 실패:', e);
+            return null;
         }
-        
-        return gradeMap[grade] || 'C';
     };
 
-    // 각 메트릭의 등급 계산 (백엔드에서 제공하는 등급 사용)
+    // 감정 분석 결과를 표시용 텍스트로 변환
+    const formatEmotionAnalysis = (emotionData) => {
+        if (!emotionData) return '감정 분석 데이터 없음';
+        
+        const positive = emotionData.positive || 0;
+        const neutral = emotionData.neutral || 0;
+        const negative = emotionData.negative || 0;
+        
+        // 모든 값이 0이면 분석 대기로 표시
+        if (positive === 0 && neutral === 0 && negative === 0) {
+            return '감정 분석 대기중';
+        }
+        
+        return `긍정: ${positive}% | 중립: ${neutral}% | 부정: ${negative}%`;
+    };
+
+    // 각 메트릭의 등급 계산 (DB에서 가져온 등급 그대로 사용)
     const getMetricGrades = (metrics) => {
         return {
-            voice: convertKoreanGradeToEnglish(metrics.intensityGrade || 'C'),
-            speed: convertKoreanGradeToEnglish(metrics.wpmGrade || 'C'),
-            expression: convertKoreanGradeToEnglish(metrics.expressionGrade || 'C'),
-            pitch: convertKoreanGradeToEnglish(metrics.pitchGrade || 'C'),
+            voice: metrics.intensityGrade || 'C',
+            speed: metrics.wpmGrade || 'C',
+            expression: metrics.expressionGrade || 'C',
+            pitch: metrics.pitchGrade || 'C',
             clarity: convertPronunciationToGrade(metrics.pronunciationScore)
         };
     };
@@ -141,82 +182,6 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
         return colors[grade] || '#9e9e9e';
     };
 
-    // 개선 제안 생성 (등급 기반)
-    const generateSuggestions = () => {
-        const suggestions = [];
-        
-        // 등급 비교 함수
-        const gradeValue = { 'A': 5, 'B': 4, 'C': 3, 'D': 2, 'E': 1 };
-        
-        // 음성 강도 비교
-        if (grades1.voice !== grades2.voice) {
-            const better = gradeValue[grades1.voice] > gradeValue[grades2.voice] ? 
-                pres1?.title : pres2?.title;
-            const betterGrade = gradeValue[grades1.voice] > gradeValue[grades2.voice] ? 
-                grades1.voice : grades2.voice;
-            suggestions.push({
-                category: '음성 강도',
-                message: `${better}가 ${betterGrade}등급으로 더 우수합니다.`,
-                improvement: '일관된 음성 강도를 유지하세요.'
-            });
-        }
-
-        // 말하기 속도 비교
-        if (grades1.speed !== grades2.speed) {
-            const better = gradeValue[grades1.speed] > gradeValue[grades2.speed] ? 
-                pres1?.title : pres2?.title;
-            const betterGrade = gradeValue[grades1.speed] > gradeValue[grades2.speed] ? 
-                grades1.speed : grades2.speed;
-            suggestions.push({
-                category: '말하기 속도',
-                message: `${better}가 ${betterGrade}등급으로 더 우수합니다.`,
-                improvement: '150 WPM 정도의 속도를 목표로 하세요.'
-            });
-        }
-
-        // 표정 비교
-        if (grades1.expression !== grades2.expression) {
-            const better = gradeValue[grades1.expression] > gradeValue[grades2.expression] ? 
-                pres1?.title : pres2?.title;
-            const betterGrade = gradeValue[grades1.expression] > gradeValue[grades2.expression] ? 
-                grades1.expression : grades2.expression;
-            suggestions.push({
-                category: '표정',
-                message: `${better}가 ${betterGrade}등급으로 더 우수합니다.`,
-                improvement: '자연스러운 표정과 적절한 표정 변화를 연습해보세요.'
-            });
-        }
-
-        // 피치 비교
-        if (grades1.pitch !== grades2.pitch) {
-            const better = gradeValue[grades1.pitch] > gradeValue[grades2.pitch] ? 
-                pres1?.title : pres2?.title;
-            const betterGrade = gradeValue[grades1.pitch] > gradeValue[grades2.pitch] ? 
-                grades1.pitch : grades2.pitch;
-            suggestions.push({
-                category: '피치',
-                message: `${better}가 ${betterGrade}등급으로 더 우수합니다.`,
-                improvement: '자연스러운 피치 변화를 연습해보세요.'
-            });
-        }
-
-        // 명확성 비교
-        if (grades1.clarity !== grades2.clarity) {
-            const better = gradeValue[grades1.clarity] > gradeValue[grades2.clarity] ? 
-                pres1?.title : pres2?.title;
-            const betterGrade = gradeValue[grades1.clarity] > gradeValue[grades2.clarity] ? 
-                grades1.clarity : grades2.clarity;
-            suggestions.push({
-                category: '명확성',
-                message: `${better}가 ${betterGrade}등급으로 더 우수합니다.`,
-                improvement: '명확한 발음과 정확한 억양을 연습해보세요.'
-            });
-        }
-
-        return suggestions;
-    };
-
-    const suggestions = generateSuggestions();
 
     // 육각형 그래프 그리기
     useEffect(() => {
@@ -515,7 +480,7 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
                             />
                             <MetricItemWithGrade 
                                 label="표정" 
-                                value={metrics1.expressionGrade || 'C'}
+                                value={formatEmotionAnalysis(parseEmotionAnalysis(metrics1.emotionAnalysis))}
                                 grade={grades1.expression}
                             />
                             <MetricItemWithGrade 
@@ -554,7 +519,7 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
                             />
                             <MetricItemWithGrade 
                                 label="표정" 
-                                value={metrics2.expressionGrade || 'C'}
+                                value={formatEmotionAnalysis(parseEmotionAnalysis(metrics2.emotionAnalysis))}
                                 grade={grades2.expression}
                             />
                             <MetricItemWithGrade 
@@ -583,8 +548,8 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
                         🤖 AI 대본 비교 분석
                     </Typography>
                     
-                    {/* 강점 비교 */}
-                    {(comparisonData.strengths_comparison || comparisonData.strengthsComparison) && (
+                    {/* 개선된 부분 */}
+                    {(aiAnalysisData.improvements_made || comparisonData.improvements_made) && (
                         <Box sx={{ mb: 3 }}>
                             <Typography variant="subtitle1" sx={{ 
                                 fontWeight: '700',
@@ -592,7 +557,7 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
                                 mb: 1,
                                 fontSize: '1.05rem'
                             }}>
-                                💪 강점 비교
+                                💪 개선된 부분
                             </Typography>
                             <Typography variant="body2" sx={{ 
                                 mb: 0.5,
@@ -600,13 +565,13 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
                                 color: '#444',
                                 lineHeight: 1.8
                             }}>
-                                {comparisonData.strengths_comparison || comparisonData.strengthsComparison}
+                                {aiAnalysisData.improvements_made || comparisonData.improvements_made}
                             </Typography>
                         </Box>
                     )}
                     
-                    {/* 개선 제안 */}
-                    {(comparisonData.improvement_suggestions || comparisonData.improvementSuggestions) && (
+                    {/* 개선이 필요한 부분 */}
+                    {(aiAnalysisData.areas_to_improve || comparisonData.areas_to_improve) && (
                         <Box sx={{ mb: 3 }}>
                             <Typography variant="subtitle1" sx={{ 
                                 fontWeight: '700',
@@ -614,7 +579,7 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
                                 mb: 1,
                                 fontSize: '1.05rem'
                             }}>
-                                💡 개선 제안
+                                💡 개선이 필요한 부분
                             </Typography>
                             <Typography variant="body2" sx={{ 
                                 mb: 0.5,
@@ -622,13 +587,13 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
                                 color: '#444',
                                 lineHeight: 1.8
                             }}>
-                                {comparisonData.improvement_suggestions || comparisonData.improvementSuggestions}
+                                {aiAnalysisData.areas_to_improve || comparisonData.areas_to_improve}
                             </Typography>
                         </Box>
                     )}
                     
                     {/* 전체 피드백 */}
-                    {(comparisonData.overall_feedback || comparisonData.overallFeedback) && (
+                    {(aiAnalysisData.overall_feedback || comparisonData.overall_feedback) && (
                         <Box sx={{ mb: 3 }}>
                             <Typography variant="subtitle1" sx={{ 
                                 fontWeight: '700',
@@ -644,14 +609,14 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
                                 color: '#444',
                                 lineHeight: 1.8
                             }}>
-                                {comparisonData.overall_feedback || comparisonData.overallFeedback}
+                                {aiAnalysisData.overall_feedback || comparisonData.overall_feedback}
                             </Typography>
                         </Box>
                     )}
                     
                     {/* AI 분석 결과가 없는 경우 */}
-                    {!(comparisonData.strengths_comparison || comparisonData.improvement_suggestions || comparisonData.overall_feedback || 
-                       comparisonData.strengthsComparison || comparisonData.improvementSuggestions || comparisonData.overallFeedback) && (
+                    {!(aiAnalysisData.improvements_made || aiAnalysisData.areas_to_improve || aiAnalysisData.overall_feedback || 
+                       comparisonData.improvements_made || comparisonData.areas_to_improve || comparisonData.overall_feedback) && (
                         <Box sx={{ mb: 3 }}>
                             <Typography variant="body2" sx={{ 
                                 mb: 0.5,
@@ -686,13 +651,10 @@ const MetricItemWithGrade = ({ label, value, grade }) => {
     };
 
     return (
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="body2" sx={{ fontWeight: '500' }}>
-                {label}:
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="body2" sx={{ fontWeight: '600', fontSize: '0.875rem' }}>
-                    {value}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="body2" sx={{ fontWeight: '500' }}>
+                    {label}:
                 </Typography>
                 <Chip 
                     label={grade} 
@@ -707,6 +669,18 @@ const MetricItemWithGrade = ({ label, value, grade }) => {
                     }}
                 />
             </Box>
+            <Typography 
+                variant="body2" 
+                sx={{ 
+                    fontWeight: '600', 
+                    fontSize: '0.8rem',
+                    color: '#666',
+                    lineHeight: 1.2,
+                    wordBreak: 'break-word'
+                }}
+            >
+                {value}
+            </Typography>
         </Box>
     );
 };

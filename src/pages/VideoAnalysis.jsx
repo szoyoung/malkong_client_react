@@ -38,7 +38,6 @@ const defaultAnalysisData = {
             grade: 'N/A',
             score: 75,
             text: '표정 분석 기능은 현재 개발 중입니다.',
-            suggestions: ['이 기능은 곧 업데이트될 예정입니다.']
         },
         pitch: {
             grade: 'N/A',
@@ -139,20 +138,21 @@ const VideoAnalysis = () => {
     };
 
     useEffect(() => {
-        // presentationId가 없으면 대시보드로 리다이렉트
-        if (!presentationId) {
-            console.error('VideoAnalysis: presentationId가 없습니다');
-            setError('분석 결과를 찾을 수 없습니다. 대시보드로 이동합니다.');
-            setTimeout(() => {
-                navigate('/dashboard');
-            }, 2000);
-            return;
-        }
+        const loadData = async () => {
+            // presentationId가 없으면 대시보드로 리다이렉트
+            if (!presentationId) {
+                console.error('VideoAnalysis: presentationId가 없습니다');
+                setError('분석 결과를 찾을 수 없습니다. 대시보드로 이동합니다.');
+                setTimeout(() => {
+                    navigate('/dashboard');
+                }, 2000);
+                return;
+            }
 
-        console.log('=== VideoAnalysis useEffect 실행 ===');
-        console.log('VideoAnalysis 마운트됨, presentationId:', presentationId);
-        console.log('location.state:', location.state);
-        console.log('현재 URL:', window.location.href);
+            console.log('=== VideoAnalysis useEffect 실행 ===');
+            console.log('VideoAnalysis 마운트됨, presentationId:', presentationId);
+            console.log('location.state:', location.state);
+            console.log('현재 URL:', window.location.href);
         
         // React Router state 또는 localStorage에서 데이터 확인
         let stateData = location.state;
@@ -202,6 +202,30 @@ const VideoAnalysis = () => {
                 setVideoData(stateData.presentationData);
             }
             
+            // forceRefresh 플래그가 있으면 무조건 DB에서 새로 로드
+            if (stateData.forceRefresh) {
+                console.log('강제 새로고침 플래그 감지 - DB에서 최신 데이터 로드');
+                console.log('stateData:', stateData);
+                
+                // pageData 설정 (forceRefresh 시에도 데이터 전달)
+                setPageData(stateData);
+                
+                // 비디오 데이터 설정
+                if (stateData.presentationData) {
+                    setVideoData(stateData.presentationData);
+                }
+                
+                // 기존 상태 초기화
+                setAnalysisData(null);
+                setFeedbackData(null);
+                setTranscriptText('');
+                setEditedTranscript('');
+                
+                // 캐시 무시하고 강제로 새로 로드 (pageData 전달)
+                await loadAnalysisResults(stateData);
+                return;
+            }
+            
             // 이미 분석 데이터가 있으면 API 호출 없이 사용
             if (stateData.analysisData) {
                 console.log('기존 분석 데이터 사용:', stateData.analysisData);
@@ -216,20 +240,27 @@ const VideoAnalysis = () => {
         
         // 분석 데이터가 없으면 서버에서 로드
         loadAnalysisResults();
+        };
+        
+        loadData();
     }, [presentationId, location.state, navigate]);
 
-    const loadAnalysisResults = async () => {
+    const loadAnalysisResults = async (passedPageData = null) => {
         try {
             setLoading(true);
             resetError();
             
-            console.log('분석 결과 로드 시작...');
+            console.log('=== DB에서 분석 결과 로드 시작 ===');
+            console.log('presentationId:', presentationId);
             
-            // 모든 분석 결과 조회
+            // 모든 분석 결과 조회 (캐시 무시)
             const result = await videoAnalysisService.getAllAnalysisResults(presentationId);
             
+            console.log('API 응답:', result);
+            
             if (result.success && result.data) {
-                console.log('분석 결과 로드 성공:', result.data);
+                console.log('=== 분석 결과 로드 성공 ===');
+                console.log('로드된 데이터:', result.data);
                 
                 // 피드백 데이터 설정
                 if (result.data.feedback) {
@@ -264,17 +295,35 @@ const VideoAnalysis = () => {
                     }
                 }
                 
-                // 비디오 데이터 설정
-                if (pageData?.presentationData) {
-                    setVideoData(pageData.presentationData);
+                // 비디오 데이터 설정 (전달된 pageData 우선 사용)
+                const currentPageData = passedPageData || pageData;
+                if (currentPageData?.presentationData) {
+                    console.log('비디오 데이터 설정:', currentPageData.presentationData);
+                    setVideoData(currentPageData.presentationData);
+                } else {
+                    console.log('비디오 데이터가 없습니다. currentPageData:', currentPageData);
                 }
             } else {
-                console.log('분석 결과가 없습니다. 기본 데이터 사용');
+                console.log('=== 분석 결과가 없음 ===');
+                console.log('result.success:', result.success);
+                console.log('result.data:', result.data);
+                console.log('result.error:', result.error);
                 setAnalysisData(createDefaultAnalysisData());
             }
         } catch (error) {
-            console.error('분석 결과 로드 실패:', error);
-            setError('분석 결과를 불러올 수 없습니다.');
+            console.error('=== 분석 결과 로드 실패 ===');
+            console.error('에러 상세:', error);
+            console.error('에러 응답:', error.response);
+            console.error('에러 메시지:', error.message);
+            
+            // 404 오류인 경우 프레젠테이션이 삭제된 것으로 간주
+            if (error.response && error.response.status === 404) {
+                console.log('프레젠테이션이 삭제되었습니다. 대시보드로 이동합니다.');
+                navigate('/dashboard', { replace: true });
+                return;
+            }
+            
+            setError(`분석 결과를 불러올 수 없습니다: ${error.message || '알 수 없는 오류'}`);
         } finally {
             setLoading(false);
         }
@@ -302,35 +351,28 @@ const VideoAnalysis = () => {
             voice: {
                 grade: voiceAnalysisData.intensityGrade || 'C',
                 score: scores.voice,
-                text: voiceAnalysisData.intensityText || '음성 강도가 적절합니다.',
-                suggestions: getVoiceSuggestions(voiceAnalysisData.intensityGrade)
+                text: voiceAnalysisData.intensityText || '음성 강도가 적절합니다.'
             },
             speed: {
                 grade: voiceAnalysisData.wpmGrade || 'C',
                 score: scores.speed,
-                text: voiceAnalysisData.wpmComment || '말하기 속도가 적당합니다.',
-                suggestions: getSpeedSuggestions(voiceAnalysisData.wpmGrade)
+                text: voiceAnalysisData.wpmComment || '말하기 속도가 적당합니다.'
             },
             expression: {
                 grade: voiceAnalysisData.expressionGrade || 'C',
                 score: scores.expression,
-                text: voiceAnalysisData.expressionText || '표정 분석이 완료되었습니다.',
-                suggestions: getExpressionSuggestions(voiceAnalysisData.expressionGrade)
+                text: voiceAnalysisData.expressionText || '표정 분석이 완료되었습니다.'
             },
             pitch: {
                 grade: voiceAnalysisData.pitchGrade || 'C',
                 score: scores.pitch,
-                text: voiceAnalysisData.pitchText || '피치 변화가 자연스럽습니다.',
-                suggestions: getPitchSuggestions(voiceAnalysisData.pitchGrade)
+                text: voiceAnalysisData.pitchText || '피치 변화가 자연스럽습니다.'
             },
             clarity: {
                 score: scores.clarity,
                 text: sttResult?.pronunciationScore ? 
                     `발음 정확도: ${(sttResult.pronunciationScore * 100).toFixed(1)}%` : 
-                    '발음 정확도 분석 기능은 현재 개발 중입니다.',
-                suggestions: sttResult?.pronunciationScore ? 
-                    getPronunciationSuggestions(sttResult.pronunciationScore) : 
-                    ['이 기능은 곧 업데이트될 예정입니다.']
+                    '발음 정확도 분석 기능은 현재 개발 중입니다.'
             }
         };
 
@@ -361,34 +403,27 @@ const VideoAnalysis = () => {
                 grade: 'C',
                 score: scores.voice,
                 text: '음성 강도 분석이 완료되지 않았습니다.',
-                suggestions: ['음성 강도 분석을 위해 비디오 분석을 다시 실행해주세요.']
                 },
                 speed: {
                 grade: 'C',
                 score: scores.speed,
                 text: '말하기 속도 분석이 완료되지 않았습니다.',
-                suggestions: ['말하기 속도 분석을 위해 비디오 분석을 다시 실행해주세요.']
                 },
                 expression: {
                     grade: 'C',
                 score: scores.expression,
                     text: '표정 분석이 완료되지 않았습니다.',
-                    suggestions: ['표정 분석을 위해 비디오 분석을 다시 실행해주세요.']
                 },
                 pitch: {
                 grade: 'C',
                 score: scores.pitch,
                 text: '피치 분석이 완료되지 않았습니다.',
-                suggestions: ['피치 분석을 위해 비디오 분석을 다시 실행해주세요.']
                 },
                 clarity: {
                 score: scores.clarity,
                 text: sttResult.pronunciationScore ? 
                     `발음 정확도: ${(sttResult.pronunciationScore * 100).toFixed(1)}%` : 
                     '발음 정확도 분석이 완료되지 않았습니다.',
-                suggestions: sttResult.pronunciationScore ? 
-                    getPronunciationSuggestions(sttResult.pronunciationScore) : 
-                    ['발음 정확도 분석을 위해 비디오 분석을 다시 실행해주세요.']
             }
         };
 
@@ -448,69 +483,6 @@ const VideoAnalysis = () => {
         return 'E';
     };
 
-    // 제안사항 헬퍼 함수들
-    const getVoiceSuggestions = (grade) => {
-        const suggestions = {
-            'A': ['현재 음성 강도가 적절합니다.', '계속 유지하세요.'],
-            'B': ['음성 강도가 약간 낮습니다.', '조금 더 크게 말해보세요.'],
-            'C': ['음성 강도가 낮습니다.', '마이크에 더 가까이 말해보세요.'],
-            'D': ['음성 강도가 매우 낮습니다.', '마이크 설정을 확인해주세요.'],
-            'E': ['음성이 거의 들리지 않습니다.', '마이크와 녹음 환경을 점검해주세요.']
-        };
-        return suggestions[grade] || ['음성 강도 분석이 필요합니다.'];
-    };
-
-    const getSpeedSuggestions = (grade) => {
-        const suggestions = {
-            'A': ['현재 말하기 속도가 적절합니다.', '계속 유지하세요.'],
-            'B': ['말하기 속도가 약간 빠릅니다.', '조금 더 천천히 말해보세요.'],
-            'C': ['말하기 속도가 빠릅니다.', '더 천천히 말해보세요.'],
-            'D': ['말하기 속도가 매우 빠릅니다.', '훨씬 더 천천히 말해보세요.'],
-            'E': ['말하기 속도가 너무 빠릅니다.', '매우 천천히 말해보세요.']
-        };
-        return suggestions[grade] || ['말하기 속도 분석이 필요합니다.'];
-    };
-
-    const getPitchSuggestions = (grade) => {
-        const suggestions = {
-            'A': ['현재 피치 변화가 자연스럽습니다.', '계속 유지하세요.'],
-            'B': ['피치 변화가 약간 부자연스럽습니다.', '더 자연스럽게 말해보세요.'],
-            'C': ['피치 변화가 부자연스럽습니다.', '억양을 더 자연스럽게 해보세요.'],
-            'D': ['피치 변화가 매우 부자연스럽습니다.', '억양을 크게 개선해보세요.'],
-            'E': ['피치 변화가 전혀 없습니다.', '억양을 완전히 바꿔보세요.']
-        };
-        return suggestions[grade] || ['피치 변화 분석이 필요합니다.'];
-    };
-
-    const getExpressionSuggestions = (grade) => {
-        // 한글 등급을 영문 등급으로 변환
-        const koreanToEnglish = {
-            '매우 좋음': 'A',
-            '좋음': 'B', 
-            '보통': 'C',
-            '나쁨': 'D',
-            '매우 나쁨': 'F'
-        };
-        
-        const englishGrade = koreanToEnglish[grade] || grade;
-        
-        const suggestions = {
-            'A': ['표정이 매우 자연스럽고 적절합니다.', '계속 유지하세요.'],
-            'B': ['표정이 자연스럽습니다.', '조금 더 자신감 있는 표정을 해보세요.'],
-            'C': ['표정이 보통입니다.', '더 밝고 자신감 있는 표정을 연습해보세요.'],
-            'D': ['표정이 부자연스럽습니다.', '표정 연습을 더 해보세요.'],
-            'E': ['표정이 매우 부자연스럽습니다.', '거울을 보며 표정 연습을 해보세요.'],
-            'F': ['표정이 매우 부자연스럽습니다.', '거울을 보며 표정 연습을 해보세요.']
-        };
-        return suggestions[englishGrade] || ['표정 분석이 필요합니다.'];
-    };
-
-    const getPronunciationSuggestions = (score) => {
-        if (score >= 80) return ['발음이 매우 정확합니다.', '계속 유지하세요.'];
-        if (score >= 60) return ['발음이 대체로 정확합니다.', '조금 더 정확하게 발음해보세요.'];
-        if (score >= 40) return ['발음이 부정확합니다.', '더 정확하게 발음해보세요.'];
-        return ['발음이 매우 부정확합니다.', '발음을 크게 개선해보세요.'];
-    };
 
     // 기본 분석 데이터 생성
     const createDefaultAnalysisData = () => {
@@ -527,30 +499,25 @@ const VideoAnalysis = () => {
                     grade: 'N/A',
                     score: 75,
                     text: '목소리 크기와 볼륨의 일관성을 평가합니다.',
-                    suggestions: ['마이크 설정을 확인해주세요', '적절한 거리에서 녹음해주세요']
                 },
                 speed: {
                     grade: 'N/A',
                     score: 72,
                     text: '분당 단어 수를 기준으로 말하기 속도를 평가합니다.',
-                    suggestions: ['청중이 따라올 수 있는 속도로 말해보세요']
                 },
                 expression: {
                     grade: 'N/A',
                     score: 75,
                     text: '표정의 자연스러움과 적절성을 평가합니다.',
-                    suggestions: ['자연스러운 표정을 유지해보세요', '자신감 있는 표정을 연습해보세요']
                 },
                 pitch: {
                     grade: 'N/A',
                     score: 78,
                     text: '목소리의 높낮이 변화와 억양을 평가합니다.',
-                    suggestions: ['다양한 억양을 사용해보세요']
                 },
                 clarity: {
                     score: 82,
                     text: '발음의 명확성과 정확도를 평가합니다.',
-                    suggestions: ['또박또박 명확하게 발음해보세요']
                 }
             },
             transcription: '분석 결과를 불러올 수 없습니다. 음성이 포함된 비디오를 업로드하면 음성 인식 결과와 함께 더 상세한 분석을 제공합니다.',

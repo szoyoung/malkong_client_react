@@ -20,6 +20,7 @@ const VideoUploader = ({
   const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [chunkProgress, setChunkProgress] = useState({ current: 0, total: 0 });
   const [success, setSuccess] = useState('');
   const [videoBlob, setVideoBlob] = useState(initialVideoBlob); // 초기값으로 받은 비디오 설정
   const [videoUrl, setVideoUrl] = useState(initialVideoBlob ? URL.createObjectURL(initialVideoBlob) : null);
@@ -138,36 +139,72 @@ const VideoUploader = ({
       }, 300);
 
       // 파일 업로드 시 프레젠테이션 정보도 함께 전달
-      const uploadData = {
+        const uploadData = {
         file: selectedFile || videoBlob,
-        presentationInfo: {
-          title: presentationInfo.title || (selectedFile ? selectedFile.name.replace(/\.[^/.]+$/, "") : '녹화된 프레젠테이션'),
+          presentationInfo: {
+            title: presentationInfo.title || (selectedFile ? selectedFile.name.replace(/\.[^/.]+$/, "") : '녹화된 프레젠테이션'),
           goalTime: presentationInfo.goalTime ? parseInt(presentationInfo.goalTime) : null
-        }
-      };
+          }
+        };
 
       const uploadResult = await onFileUpload(uploadData);
       
       clearInterval(progressInterval);
       setUploadProgress(100);
       
-      // 분석 기능이 활성화되고 업로드 결과가 있으면 자동으로 분석 시작
+      // 분석 기능이 활성화되고 업로드 결과가 있으면 자동으로 비동기 분석 시작
       if (enableAnalysis && uploadResult && uploadResult.id) {
         setIsAnalyzing(true);
+        setSuccess('비디오 업로드 완료! 분석을 시작합니다...');
+        
+        // 청크 업로드 시뮬레이션 (50MB 이상인 경우)
+        const fileSize = (selectedFile || videoBlob)?.size || 0;
+        const maxSize = 50 * 1024 * 1024; // 50MB
+        
+        if (fileSize > maxSize) {
+          const totalChunks = Math.ceil(fileSize / maxSize);
+          setChunkProgress({ current: 0, total: totalChunks });
+          
+          // 청크 업로드 시뮬레이션
+          for (let i = 0; i < totalChunks; i++) {
+            await new Promise(resolve => setTimeout(resolve, 1000)); // 1초 대기
+            setChunkProgress({ current: i + 1, total: totalChunks });
+            setSuccess(`청크 업로드 중... ${i + 1}/${totalChunks}`);
+          }
+          
+          setSuccess('모든 청크 업로드 완료! 분석을 시작합니다...');
+        }
         
         try {
-          const analysisResult = await videoAnalysisService.analyzeVideo(uploadResult.id, selectedFile || videoBlob);
+          // 비동기 분석 시작
+          const startResult = await videoAnalysisService.startAsyncVideoAnalysis(
+            uploadResult.id, 
+            selectedFile || videoBlob
+          );
+          
+          if (startResult.success) {
+            const { jobId } = startResult.data;
+            
+            // 분석 진행 상태 폴링
+            try {
+              const analysisResult = await videoAnalysisService.pollAnalysisResult(
+                jobId,
+                (progress) => {
+                  // 진행 상태 업데이트
+                  if (progress.status === 'processing') {
+                    setSuccess(`분석 중... ${progress.message || '잠시만 기다려주세요'}`);
+                  }
+                }
+              );
           
           if (analysisResult.success) {
             setSuccess('비디오 업로드 및 분석이 완료되었습니다!');
+                setChunkProgress({ current: 0, total: 0 }); // 청크 진행률 초기화
             
             if (onAnalysisComplete) {
               // 분석 데이터 구조 통일
               const actualAnalysisData = {
-                ...analysisResult.data?.analysisResult || 
-                analysisResult.data || 
-                analysisResult.analysisResult ||
-                analysisResult,
+                    ...analysisResult.data,
                 // 비디오 URL 추가
                 videoUrl: uploadResult.videoUrl || uploadResult.url || URL.createObjectURL(selectedFile || videoBlob)
               };
@@ -185,9 +222,31 @@ const VideoUploader = ({
                 };
                 onAnalysisComplete(callbackData);
               }, 100);
+                }
+              }
+            } catch (pollingError) {
+              console.error('분석 폴링 오류:', pollingError);
+              setError(`분석 실패: ${pollingError.message}`);
+              setChunkProgress({ current: 0, total: 0 }); // 청크 진행률 초기화
+              
+              if (onAnalysisComplete) {
+                onClose();
+                
+                setTimeout(() => {
+                  const callbackData = {
+                    presentationId: uploadResult.id,
+                    presentationData: {
+                      ...uploadResult,
+                      videoUrl: URL.createObjectURL(selectedFile || videoBlob)
+                    },
+                    analysisError: pollingError.message
+                  };
+                  onAnalysisComplete(callbackData);
+                }, 100);
+              }
             }
           } else {
-            setError(`분석 실패: ${analysisResult.error}`);
+            setError(`분석 시작 실패: ${startResult.error}`);
             
             if (onAnalysisComplete) {
               onClose();
@@ -199,7 +258,7 @@ const VideoUploader = ({
                     ...uploadResult,
                     videoUrl: URL.createObjectURL(selectedFile || videoBlob)
                   },
-                  analysisError: analysisResult.error
+                  analysisError: startResult.error
                 };
                 onAnalysisComplete(callbackData);
               }, 100);
@@ -208,6 +267,7 @@ const VideoUploader = ({
         } catch (analysisError) {
           console.error('분석 오류:', analysisError);
           setError('분석 중 오류가 발생했습니다.');
+          setChunkProgress({ current: 0, total: 0 }); // 청크 진행률 초기화
           
           if (onAnalysisComplete) {
             onClose();
@@ -271,6 +331,17 @@ const VideoUploader = ({
 
   const isProcessing = isUploading || isAnalyzing;
   const currentStatus = isAnalyzing ? '분석 중...' : isUploading ? '업로드 중...' : '';
+  
+  // 분석 진행 상태에 따른 메시지
+  const getAnalysisStatusMessage = () => {
+    if (isAnalyzing) {
+      if (success.includes('분석 중')) {
+        return success;
+      }
+      return '분석 중... 잠시만 기다려주세요';
+    }
+    return '';
+  };
 
   return (
     <div style={{
@@ -560,33 +631,73 @@ const VideoUploader = ({
         {/* 업로드/분석 진행 상태 */}
         {isProcessing && (
           <div style={{
-            backgroundColor: '#e3f2fd',
+            backgroundColor: isAnalyzing ? '#fff3e0' : '#e3f2fd',
             borderRadius: '8px',
-            padding: '12px',
+            padding: '16px',
             marginBottom: '16px',
             textAlign: 'center'
           }}>
             <div style={{
-              fontSize: '14px',
-              color: '#1976d2',
-              marginBottom: '8px'
+              fontSize: '16px',
+              color: isAnalyzing ? '#f57c00' : '#1976d2',
+              marginBottom: '12px',
+              fontWeight: '500'
             }}>
-              {currentStatus} {uploadProgress}%
+              {isAnalyzing ? '🔍 ' : '📤 '}{currentStatus}
             </div>
+            
+            {isAnalyzing && (
+              <div style={{
+                fontSize: '14px',
+                color: '#e65100',
+                marginBottom: '12px',
+                fontStyle: 'italic'
+              }}>
+                {getAnalysisStatusMessage()}
+              </div>
+            )}
+            
             <div style={{
               width: '100%',
-              height: '4px',
-              backgroundColor: '#bbdefb',
-              borderRadius: '2px',
+              height: '6px',
+              backgroundColor: isAnalyzing ? '#ffe0b2' : '#bbdefb',
+              borderRadius: '3px',
               overflow: 'hidden'
             }}>
               <div style={{
                 width: `${uploadProgress}%`,
                 height: '100%',
-                backgroundColor: '#1976d2',
-                transition: 'width 0.3s ease'
+                backgroundColor: isAnalyzing ? '#ff9800' : '#1976d2',
+                transition: 'width 0.3s ease',
+                animation: isAnalyzing ? 'pulse 2s infinite' : 'none'
               }} />
             </div>
+            
+            {/* 청크 업로드 진행률 표시 */}
+            {chunkProgress.total > 0 && (
+              <div style={{
+                marginTop: '8px',
+                fontSize: '12px',
+                color: '#666666'
+              }}>
+                청크 업로드: {chunkProgress.current} / {chunkProgress.total}
+                {chunkProgress.total > 0 && (
+                  <span style={{ marginLeft: '8px' }}>
+                    ({Math.round((chunkProgress.current / chunkProgress.total) * 100)}%)
+                  </span>
+                )}
+              </div>
+            )}
+            
+            {isAnalyzing && (
+              <div style={{
+                fontSize: '12px',
+                color: '#bf360c',
+                marginTop: '8px'
+              }}>
+                ⏱️ 분석에는 몇 분이 소요될 수 있습니다
+              </div>
+            )}
           </div>
         )}
 

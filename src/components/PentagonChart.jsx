@@ -68,6 +68,18 @@ const PentagonChart = ({ data = {}, analysisDetails, size = 350, showLabels = tr
         return colors.danger;
     };
 
+    // 등급에 따른 색상 반환
+    const getGradeColor = (grade) => {
+        switch (grade) {
+            case 'A': return colors.accent;
+            case 'B': return colors.accent;
+            case 'C': return colors.warning;
+            case 'D': return colors.danger;
+            case 'E': return colors.danger;
+            default: return colors.warning;
+        }
+    };
+
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -243,27 +255,25 @@ const PentagonChart = ({ data = {}, analysisDetails, size = 350, showLabels = tr
             ctx.textAlign = 'center';
             ctx.fontWeight = 'bold';
             
-            // 평균 등급 계산
-            let totalGrade = 0;
+            // 평균 등급 계산 (VideoAnalysis와 동일한 방식)
+            const gradeValues = { 'A': 5, 'B': 4, 'C': 3, 'D': 2, 'E': 1, 'F': 0 };
+            
+            let totalGradeValue = 0;
             let gradeCount = 0;
+            
             axisOrder.forEach(key => {
                 const value = safeData[key];
-                if (typeof value === 'string') {
-                    const gradeValues = { 'A': 90, 'B': 80, 'C': 70, 'D': 60, 'E': 50, 'F': 40 };
-                    totalGrade += gradeValues[value] || 70;
+                if (typeof value === 'string' && gradeValues[value] !== undefined) {
+                    totalGradeValue += gradeValues[value];
                     gradeCount++;
                 }
             });
             
-            const averageGrade = gradeCount > 0 ? Math.round(totalGrade / gradeCount) : 70;
-            let averageGradeText;
-            
-            if (averageGrade >= 90) averageGradeText = 'A';
-            else if (averageGrade >= 80) averageGradeText = 'B';
-            else if (averageGrade >= 70) averageGradeText = 'C';
-            else if (averageGrade >= 60) averageGradeText = 'D';
-            else if (averageGrade >= 50) averageGradeText = 'E';
-            else averageGradeText = 'F';
+            // 등급 평균 계산
+            const averageGradeValue = gradeCount > 0 ? totalGradeValue / gradeCount : 3;
+            const averageGradeText = Object.keys(gradeValues).find(key => 
+                gradeValues[key] === Math.round(averageGradeValue)
+            ) || 'C';
             
             ctx.fillText(`${averageGradeText}`, centerX, centerY + (isPreview ? 10 : -5));
         }
@@ -346,33 +356,12 @@ const PentagonChart = ({ data = {}, analysisDetails, size = 350, showLabels = tr
                             gap: '20px'
                         }}>
                             {Object.entries(analysisDetails).map(([key, item], index, array) => {
-                                // 등급을 ABCDE로 변환하는 함수
-                                const convertGradeToABCDE = (grade) => {
-                                    if (!grade) return 'C';
-                                    if (typeof grade === 'string') {
-                                        // 이미 ABCDE인 경우 그대로 사용
-                                        if (['A', 'B', 'C', 'D', 'E'].includes(grade)) return grade;
-                                        // N/A나 개발중인 경우 C로 설정
-                                        if (grade.includes('N/A') || grade.includes('개발중')) return 'C';
-                                        // 숫자 점수인 경우 ABCDE로 변환
-                                        if (typeof grade === 'number' || !isNaN(grade)) {
-                                            const numGrade = parseFloat(grade);
-                                            if (numGrade >= 0.8) return 'A';
-                                            if (numGrade >= 0.6) return 'B';
-                                            if (numGrade >= 0.4) return 'C';
-                                            if (numGrade >= 0.2) return 'D';
-                                            return 'E';
-                                        }
-                                    }
-                                    return 'C';
-                                };
-
+                                // DB에서 가져온 데이터를 그대로 사용 (등급 변환 제거)
                                 const analysisItem = {
                                     title: key,
                                     score: item.score || 0,
-                                    grade: convertGradeToABCDE(item.grade),
-                                    description: item.text || '분석 결과가 없습니다.',
-                                    suggestions: item.suggestions || []
+                                    grade: item.grade || 'C', // DB에서 가져온 등급 그대로 사용
+                                    description: item.text || '분석 결과가 없습니다.'
                                 };
                                 
                                 return (
@@ -414,9 +403,9 @@ const PentagonChart = ({ data = {}, analysisDetails, size = 350, showLabels = tr
                                                 <span style={{
                                                     fontSize: '16px',
                                                     fontWeight: '700',
-                                                    color: getScoreColor(analysisItem.score),
+                                                    color: getGradeColor(analysisItem.grade),
                                                     padding: '4px 12px',
-                                                    backgroundColor: getScoreColor(analysisItem.score) + '15',
+                                                    backgroundColor: getGradeColor(analysisItem.grade) + '15',
                                                     borderRadius: '20px'
                                                 }}>
                                                     {analysisItem.grade}등급
@@ -427,51 +416,11 @@ const PentagonChart = ({ data = {}, analysisDetails, size = 350, showLabels = tr
                                         <p style={{
                                             fontSize: '14px',
                                             color: '#555555',
-                                            margin: '0 0 12px 0',
+                                            margin: '0',
                                             lineHeight: '1.6'
                                         }}>
                                             {analysisItem.description}
                                         </p>
-                                        
-                                        {analysisItem.suggestions.length > 0 && (
-                                            <div style={{
-                                                backgroundColor: '#f8f9fa',
-                                                borderRadius: '8px',
-                                                padding: '12px',
-                                                fontSize: '13px',
-                                                color: '#555555'
-                                            }}>
-                                                <div style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '6px',
-                                                    marginBottom: '8px'
-                                                }}>
-                                                    <span>💡</span>
-                                                    <strong>개선 제안:</strong>
-                                                </div>
-                                                <ul style={{
-                                                    margin: '0',
-                                                    paddingLeft: '18px',
-                                                    listStyle: 'none'
-                                                }}>
-                                                    {analysisItem.suggestions.map((suggestion, idx) => (
-                                                        <li key={idx} style={{ 
-                                                            marginBottom: '4px',
-                                                            position: 'relative'
-                                                        }}>
-                                                            <span style={{
-                                                                position: 'absolute',
-                                                                left: '-14px',
-                                                                color: '#4CAF50',
-                                                                fontWeight: 'bold'
-                                                            }}>•</span>
-                                                            {suggestion}
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
                                     </div>
                                 );
                             })}

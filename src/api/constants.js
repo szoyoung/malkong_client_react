@@ -57,6 +57,13 @@ export const API_ROUTES = {
     PROFILE: '/api/user/profile',
     UPDATE: '/api/user/update',
   },
+  SETTINGS: {
+    PROFILE_IMAGE: '/api/settings/profile-image',
+    NAME: '/api/settings/name',
+    PASSWORD: '/api/settings/password',
+    ACCOUNT: '/api/settings/account',
+    NOTIFICATION: '/api/settings/notification',
+  },
 };
 
 export const AUTH_ROUTES = {

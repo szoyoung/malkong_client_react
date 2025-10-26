@@ -8,6 +8,7 @@ import TopicManager from './TopicManager';
 import PresentationManager from './PresentationManager';
 import VideoPlayer from './VideoPlayer';
 import PentagonChart from './PentagonChart';
+import PresentationOptionsModal from './PresentationOptionsModal';
 import TeamCreator from './team/TeamCreator';
 import TeamJoin from './team/TeamJoin';
 import TeamInvite from './team/TeamInvite';
@@ -41,6 +42,8 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
     const [showVideoPlayer, setShowVideoPlayer] = useState(false);
     const [showNotification, setShowNotification] = useState(false);
     const [notificationMessage, setNotificationMessage] = useState('');
+    const [showPresentationOptions, setShowPresentationOptions] = useState(false);
+    const [selectedPresentationForOptions, setSelectedPresentationForOptions] = useState(null);
 
     const presentations = useSelector(state => state.topic.presentations);
     const currentTopic = useSelector(state => state.topic.currentTopic);
@@ -198,37 +201,28 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
 
     const calculateVoiceScore = (data) => {
         if (!data.intensityGrade) return 75;
-        const gradeMap = { 'A': 90, 'B': 80, 'C': 70, 'D': 60, 'F': 50 };
+        const gradeMap = { 'A': 90, 'B': 80, 'C': 70, 'D': 60, 'E': 50, 'F': 40 };
         return gradeMap[data.intensityGrade] || 75;
     };
 
     const calculateSpeedScore = (data) => {
         if (!data.wpmGrade) return 75;
-        const gradeMap = { 'A': 90, 'B': 80, 'C': 70, 'D': 60, 'F': 50 };
+        const gradeMap = { 'A': 90, 'B': 80, 'C': 70, 'D': 60, 'E': 50, 'F': 40 };
         return gradeMap[data.wpmGrade] || 75;
     };
 
     const calculatePitchScore = (data) => {
         if (!data.pitchGrade) return 75;
-        const gradeMap = { 'A': 90, 'B': 80, 'C': 70, 'D': 60, 'F': 50 };
+        const gradeMap = { 'A': 90, 'B': 80, 'C': 70, 'D': 60, 'E': 50, 'F': 40 };
         return gradeMap[data.pitchGrade] || 75;
     };
 
     const calculateExpressionScore = (data) => {
         if (!data.expressionGrade) return 75;
         
-        // 한글 등급을 영문 등급으로 변환
-        const koreanToEnglish = {
-            '매우 좋음': 'A',
-            '좋음': 'B', 
-            '보통': 'C',
-            '나쁨': 'D',
-            '매우 나쁨': 'F'
-        };
-        
-        const englishGrade = koreanToEnglish[data.expressionGrade] || data.expressionGrade;
-        const gradeMap = { 'A': 90, 'B': 80, 'C': 70, 'D': 60, 'F': 50 };
-        return gradeMap[englishGrade] || 75;
+        // DB에서 가져온 등급을 그대로 사용하여 점수 변환
+        const gradeMap = { 'A': 90, 'B': 80, 'C': 70, 'D': 60, 'E': 50, 'F': 40 };
+        return gradeMap[data.expressionGrade] || 75;
     };
 
     const calculateClarityScore = (data) => {
@@ -259,7 +253,20 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
             pronunciationScore: data.sttResult?.pronunciationScore || 0.75
         };
 
-        // 점수 계산
+        // 등급 데이터 (PentagonChart에서 사용)
+        const grades = {
+            voice: fastApiData.intensityGrade,
+            speed: fastApiData.wpmGrade,
+            expression: fastApiData.expressionGrade,
+            pitch: fastApiData.pitchGrade,
+            clarity: fastApiData.pronunciationScore ? 
+                (fastApiData.pronunciationScore >= 0.8 ? 'A' :
+                 fastApiData.pronunciationScore >= 0.6 ? 'B' :
+                 fastApiData.pronunciationScore >= 0.4 ? 'C' :
+                 fastApiData.pronunciationScore >= 0.2 ? 'D' : 'E') : 'C'
+        };
+
+        // 점수 계산 (기존 호환성 유지)
         const scores = {
             voice: calculateVoiceScore(fastApiData),
             speed: calculateSpeedScore(fastApiData),
@@ -268,7 +275,7 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
             clarity: calculateClarityScore(fastApiData)
         };
 
-        return { scores };
+        return { scores, grades };
     };
 
     const loadAnalysisResults = async (presentationId) => {
@@ -364,25 +371,128 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
             console.log('분석 결과 확인 응답:', hasResults);
             
             if (hasResults.success && hasResults.data && hasResults.data.hasResults) {
-                // 분석 결과가 있으면 분석 페이지로 이동
-                console.log('분석 결과가 있음 - 분석 페이지로 이동');
-                navigate(`/video-analysis/${presentation.id}`, {
+                // 분석 결과가 있으면 최신 데이터를 로드한 후 분석 페이지로 이동
+                console.log('분석 결과가 있음 - 최신 데이터 로드 후 분석 페이지로 이동');
+                await loadLatestAnalysisDataAndNavigate(presentation);
+            } else {
+                // 분석 결과가 없을 때의 처리
+                console.log('분석 결과가 없음 - 옵션 선택');
+                
+                // 분석 진행 중인지 확인
+                const analysisStatus = await checkAnalysisStatus(presentation.id);
+                
+                if (analysisStatus.isAnalyzing) {
+                    // 분석 진행 중이면 진행 상태 페이지로 이동
+                    navigate(`/analysis-progress/${presentation.id}`, {
                     state: {
                         presentationData: presentation,
-                        topicData: currentTopic
+                            topicData: currentTopic,
+                            analysisStatus: analysisStatus
                     }
                 });
             } else {
-                // 분석 결과가 없으면 비디오 플레이어로 재생
-                console.log('분석 결과가 없음 - 비디오 플레이어로 재생');
-                setSelectedPresentation(presentation);
-                setShowVideoPlayer(true);
+                    // 분석이 진행 중이 아니면 옵션 선택 모달 표시
+                    showPresentationOptionsModal(presentation);
+                }
             }
         } catch (error) {
             console.error('분석 결과 확인 실패:', error);
-            // 에러 발생 시 기본적으로 비디오 플레이어로 재생
-            setSelectedPresentation(presentation);
+            // 에러 발생 시 옵션 선택 모달 표시
+            showPresentationOptionsModal(presentation);
+        }
+    };
+
+    // 분석 진행 상태 확인
+    const checkAnalysisStatus = async (presentationId) => {
+        try {
+            // 분석 작업 상태 확인 API 호출
+            const response = await fetch(`/api/video-analysis/${presentationId}/status`);
+            if (response.ok) {
+                const data = await response.json();
+                return {
+                    isAnalyzing: data.status === 'processing' || data.status === 'pending',
+                    status: data.status,
+                    progress: data.progress || 0
+                };
+            }
+        } catch (error) {
+            console.error('분석 상태 확인 실패:', error);
+        }
+        return { isAnalyzing: false, status: 'unknown', progress: 0 };
+    };
+
+    // 프레젠테이션 옵션 선택 모달 표시
+    const showPresentationOptionsModal = (presentation) => {
+        setSelectedPresentationForOptions(presentation);
+        setShowPresentationOptions(true);
+    };
+
+    // 옵션 액션 핸들러들
+    const handleVideoPlay = () => {
+        setSelectedPresentation(selectedPresentationForOptions);
             setShowVideoPlayer(true);
+    };
+
+    const handleAnalyze = () => {
+        navigate('/dashboard', {
+            state: {
+                selectedPresentation: selectedPresentationForOptions,
+                action: 'analyze'
+            }
+        });
+    };
+
+    const handleEdit = () => {
+        navigate('/dashboard', {
+            state: {
+                selectedPresentation: selectedPresentationForOptions,
+                action: 'edit'
+            }
+        });
+    };
+
+    // 최신 분석 데이터를 로드하고 분석 페이지로 이동
+    const loadLatestAnalysisDataAndNavigate = async (presentation) => {
+        try {
+            console.log('최신 분석 데이터 로드 시작...');
+            
+            // DB에서 최신 분석 결과 조회
+            const result = await videoAnalysisService.getAllAnalysisResults(presentation.id);
+            
+            if (result.success && result.data) {
+                console.log('최신 분석 데이터 로드 성공:', result.data);
+                
+                // 분석 페이지로 이동하면서 최신 데이터 전달
+                navigate(`/video-analysis/${presentation.id}`, {
+                    state: {
+                        presentationData: presentation,
+                        topicData: currentTopic,
+                        analysisData: result.data,
+                        forceRefresh: true, // 강제 새로고침 플래그
+                        timestamp: Date.now()
+                    }
+                });
+            } else {
+                console.error('분석 데이터 로드 실패:', result.error);
+                // 분석 결과가 없어도 페이지로 이동 (에러 처리)
+                navigate(`/video-analysis/${presentation.id}`, {
+                    state: {
+                        presentationData: presentation,
+                        topicData: currentTopic,
+                        forceRefresh: true
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('최신 분석 데이터 로드 중 오류:', error);
+            // 에러가 발생해도 페이지로 이동
+            navigate(`/video-analysis/${presentation.id}`, {
+                state: {
+                    presentationData: presentation,
+                    topicData: currentTopic,
+                    forceRefresh: true
+                }
+            });
         }
     };
 
@@ -1007,7 +1117,7 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
                                                     }}>
                                                         {hasAnalysis ? (
                                                             <PentagonChart
-                                                                data={analysisData.scores}
+                                                                data={analysisData.grades || analysisData.scores}
                                                                 size={180}
                                                                 showLabels={false}
                                                                 showGrid={false}
@@ -1639,6 +1749,16 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
                 team={teamForTopicCreation}
             />
             
+
+            {/* Presentation Options Modal */}
+            <PresentationOptionsModal
+                open={showPresentationOptions}
+                onClose={() => setShowPresentationOptions(false)}
+                presentation={selectedPresentationForOptions}
+                onVideoPlay={handleVideoPlay}
+                onAnalyze={handleAnalyze}
+                onEdit={handleEdit}
+            />
 
             {/* Notification */}
             {showNotification && (

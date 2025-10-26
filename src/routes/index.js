@@ -8,6 +8,7 @@ import ForgotPassword from '../pages/ForgotPassword';
 import OAuth2RedirectHandler from '../pages/OAuth2RedirectHandler';
 import Dashboard from '../pages/Dashboard';
 import VideoAnalysis from '../pages/VideoAnalysis';
+import AnalysisProgress from '../pages/AnalysisProgress';
 import Comparison from '../pages/Comparison';
 import Settings from '../pages/Settings';
 import TeamManagement from '../pages/TeamManagement';
@@ -47,6 +48,15 @@ const AppRoutes = () => {
         element={
           <PrivateRoute skipAuthValidation={true}>
             <VideoAnalysis />
+          </PrivateRoute>
+        } 
+      />
+
+      <Route 
+        path="/analysis-progress/:presentationId" 
+        element={
+          <PrivateRoute skipAuthValidation={true}>
+            <AnalysisProgress />
           </PrivateRoute>
         } 
       />
