@@ -29,7 +29,7 @@ const PageContainer = styled(Container)({
   flexDirection: 'column',
   padding: 0,
   margin: 0,
-  background: theme.palette.background.default,
+  background: '#FFFFFF',
   overflowX: 'hidden',
   paddingTop: '80px',
 });
@@ -50,7 +50,7 @@ const LeftSection = styled(Box)({
   alignItems: 'center',
   justifyContent: 'center',
   padding: '40px',
-  background: theme.palette.background.default,
+  background: '#FFFFFF',
 });
 
 const RightSection = styled(Box)({
@@ -59,7 +59,7 @@ const RightSection = styled(Box)({
   alignItems: 'center',
   justifyContent: 'center',
   padding: '40px',
-  background: theme.palette.background.default,
+  background: '#FFFFFF',
 });
 
 const LogoSection = styled(Box)({
@@ -69,12 +69,10 @@ const LogoSection = styled(Box)({
   gap: '16px',
 });
 
-const LogoText = styled(Typography)({
-  color: theme.palette.text.primary,
-  fontSize: '72px', // 크기를 더 크게 조정
-  fontFamily: '"SeoulAlrim", "Noto Sans KR"', // 메인 페이지와 동일한 폰트
-  fontWeight: 800, // 메인 페이지와 동일한 굵기
-  letterSpacing: '-0.5px',
+const LogoImage = styled('img')({
+  width: 'auto',
+  height: '120px', // 텍스트 크기 72px과 비슷한 높이
+  objectFit: 'contain',
 });
 
 const SignUpCard = styled(Box)({
@@ -82,7 +80,7 @@ const SignUpCard = styled(Box)({
   maxWidth: '400px',
   padding: '32px',
   borderRadius: '16px',
-  background: theme.palette.background.default,
+  background: '#FFFFFF',
   boxShadow: theme.shadows.md,
   border: `1px solid ${theme.palette.border}`,
 });
@@ -101,7 +99,7 @@ const StyledTextField = styled(TextField)({
   marginBottom: '16px',
   '& .MuiOutlinedInput-root': {
     borderRadius: '8px',
-    backgroundColor: theme.palette.background.default,
+    backgroundColor: '#FFFFFF',
     '& fieldset': {
       borderColor: theme.palette.border,
     },
@@ -143,10 +141,10 @@ const OutlinedButton = styled(Button)({
   fontWeight: 500,
   textTransform: 'none',
   border: `1px solid ${theme.palette.border}`,
-  background: theme.palette.background.default,
+  background: '#FFFFFF',
   color: theme.palette.text.primary,
   '&:hover': {
-    background: theme.palette.background.default,
+    background: '#F5F5F5',
   },
 });
 
@@ -259,7 +257,7 @@ const SignUp = () => {
         <ContentContainer>
           <LeftSection>
             <LogoSection>
-              <LogoText>또랑또랑</LogoText>
+              <LogoImage src="/malkong_logo.png" alt="또랑또랑" />
             </LogoSection>
           </LeftSection>
           

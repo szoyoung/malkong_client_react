@@ -97,28 +97,24 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
         )}
 
         {/* Logo */}
-        <div 
+        <img
+          src="/malkong_logo.png"
+          alt="또랑또랑"
           style={{
-            color: '#000000',
-            fontSize: '28px', 
-            fontFamily: 'Inter, sans-serif', 
-            fontWeight: '700', 
-            lineHeight: '36px', 
+            height: '40px',
             cursor: 'pointer',
             transition: 'all 0.3s ease'
           }}
           onClick={() => handleNavigation(isAuthenticated ? '/dashboard' : '/')}
           onMouseEnter={(e) => {
-            e.target.style.color = '#333333';
             e.target.style.transform = 'translateY(-1px)';
+            e.target.style.opacity = '0.8';
           }}
           onMouseLeave={(e) => {
-            e.target.style.color = '#000000';
             e.target.style.transform = 'translateY(0)';
+            e.target.style.opacity = '1';
           }}
-        >
-          또랑또랑
-        </div>
+        />
       </div>
 
       {/* Right Section - Navigation Menu */}
