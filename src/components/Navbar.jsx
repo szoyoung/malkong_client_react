@@ -303,57 +303,73 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
         ) : (
           // 로그인되지 않은 경우: 회원가입, 로그인 버튼
           <>
-            <div 
+            <div
               style={{
-                padding: '10px 20px',
-                color: '#6c757d',
-                fontSize: '16px', 
-                fontFamily: 'Inter, sans-serif', 
-                fontWeight: '500', 
+                padding: '10px 16px',
+                color: location.pathname === '/signup' ? '#1976d2' : '#6c757d',
+                fontSize: '16px',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: '500',
                 cursor: 'pointer',
                 borderRadius: '25px',
                 transition: 'all 0.3s ease',
-                background: 'transparent'
+                background: location.pathname === '/signup' ? '#e3f2fd' : 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
               }}
               onClick={() => handleNavigation('/signup')}
               onMouseEnter={(e) => {
-                e.target.style.background = '#f8f9fa';
-                e.target.style.color = '#000000';
+                if (location.pathname !== '/signup') {
+                  e.target.style.background = '#f8f9fa';
+                  e.target.style.color = '#000000';
+                }
                 e.target.style.transform = 'translateY(-2px)';
               }}
               onMouseLeave={(e) => {
-                e.target.style.background = 'transparent';
-                e.target.style.color = '#6c757d';
+                if (location.pathname !== '/signup') {
+                  e.target.style.background = 'transparent';
+                  e.target.style.color = '#6c757d';
+                }
                 e.target.style.transform = 'translateY(0)';
               }}
             >
-              Sign Up
+             
+              회원가입
             </div>
-            <div 
+            <div
               style={{
-                padding: '10px 20px',
-                color: '#6c757d',
-                fontSize: '16px', 
-                fontFamily: 'Inter, sans-serif', 
-                fontWeight: '500', 
+                padding: '10px 16px',
+                color: location.pathname === '/login' ? '#1976d2' : '#6c757d',
+                fontSize: '16px',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: '500',
                 cursor: 'pointer',
                 borderRadius: '25px',
                 transition: 'all 0.3s ease',
-                background: 'transparent'
+                background: location.pathname === '/login' ? '#e3f2fd' : 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
               }}
               onClick={() => handleNavigation('/login')}
               onMouseEnter={(e) => {
-                e.target.style.background = '#f8f9fa';
-                e.target.style.color = '#000000';
+                if (location.pathname !== '/login') {
+                  e.target.style.background = '#f8f9fa';
+                  e.target.style.color = '#000000';
+                }
                 e.target.style.transform = 'translateY(-2px)';
               }}
               onMouseLeave={(e) => {
-                e.target.style.background = 'transparent';
-                e.target.style.color = '#6c757d';
+                if (location.pathname !== '/login') {
+                  e.target.style.background = 'transparent';
+                  e.target.style.color = '#6c757d';
+                }
                 e.target.style.transform = 'translateY(0)';
               }}
             >
-              Login
+              
+              로그인
             </div>
           </>
         )}
