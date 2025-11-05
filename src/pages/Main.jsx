@@ -23,12 +23,12 @@ const Main = () => {
 
   // 순차 애니메이션: 왼쪽 요소들 동시에 → 오른쪽 텍스트들 순차적으로
   useEffect(() => {
-    // 1. 왼쪽 요소들 모두 동시에 페이드인 (0.5초 후)
+    // 1. 왼쪽 요소들 모두 동시에 페이드인 (0.3초 후)
     setTimeout(() => {
       setLogoVisible(true);
       setSubtitleVisible(true);
       setButtonsVisible(true);
-    }, 500);
+    }, 300);
 
     // 2. 오른쪽 텍스트들 순차 애니메이션 (2.0초 후부터 시작)
     const messages = [
@@ -41,7 +41,7 @@ const Main = () => {
     messages.forEach((_, index) => {
       setTimeout(() => {
         setVisibleTexts(prev => [...prev, index]);
-      }, 2000 + (index * 800)); // 2.0초 후 시작, 0.8초 간격
+      }, 1500 + (index * 600)); // 1.5초 후 시작, 0.6초 간격
     });
   }, []);
 
@@ -111,7 +111,7 @@ const Main = () => {
             transform: logoVisible ? 'translateX(0)' : 'translateX(-80px)',
             transition: 'all 1.2s cubic-bezier(0.4, 0, 0.2, 1)'
           }}>
-            또랑또랑
+            말콩
           </div>
           
           {/* 부제목 - 페이드인 애니메이션 */}
@@ -212,7 +212,7 @@ const Main = () => {
           paddingBottom: '80px'
         }}>
           <div style={{
-            fontSize: '48px',
+            fontSize: '40px',
             fontFamily: '"SeoulAlrim", "Noto Sans KR"',
             fontWeight: '500',
             color: 'black',
@@ -224,7 +224,7 @@ const Main = () => {
           </div>
           
           <div style={{
-            fontSize: '48px',
+            fontSize: '40px',
             fontFamily: '"SeoulAlrim", "Noto Sans KR"',
             fontWeight: '500',
             color: 'black',
@@ -236,7 +236,7 @@ const Main = () => {
           </div>
           
           <div style={{
-            fontSize: '48px',
+            fontSize: '40px',
             fontFamily: '"SeoulAlrim", "Noto Sans KR"',
             fontWeight: '500',
             color: 'black',
@@ -248,7 +248,7 @@ const Main = () => {
           </div>
           
           <div style={{
-            fontSize: '48px',
+            fontSize: '40px',
             fontFamily: '"SeoulAlrim", "Noto Sans KR"',
             fontWeight: '500',
             color: '#2E63BC',
@@ -285,27 +285,27 @@ const Main = () => {
           }}
         >
           <div style={{
-            fontSize: '48px',
+            fontSize: '44px',
             fontFamily: '"SeoulAlrim", "Noto Sans KR"',
-            fontWeight: '700',  // 500 → 700으로 볼드체 변경
+            fontWeight: '500',  // 500 → 700으로 볼드체 변경
             color: 'black'
           }}>
             AI가 제공하는 피드백
           </div>
           <div style={{
-            fontSize: '32px',
+            fontSize: '28px',
             fontFamily: '"SeoulAlrim", "Noto Sans KR"',
             fontWeight: '500',
             lineHeight: '48px',
             color: 'black'
           }}>
-            또랑또랑은 AI 기술을 활용하여 <br/>
+            말콩은 AI 기술을 활용하여 <br/>
             여러분의 발표 실력을 향상시켜 드립니다<br/>
             사용자가 발표 연습을 녹화하고 올리면 <br/>
             AI가 분석하여 객관적인 피드백을 제공합니다
           </div>
           <div style={{
-            fontSize: '32px',
+            fontSize: '28px',
             fontFamily: '"SeoulAlrim", "Noto Sans KR"',
             fontWeight: '500',
             lineHeight: '48px',
@@ -333,7 +333,7 @@ const Main = () => {
           }}
         >
           <div style={{
-            fontSize: '48px',
+            fontSize: '44px',
             fontFamily: '"SeoulAlrim", "Noto Sans KR"',
             fontWeight: '700',  // 500 → 700으로 볼드체 변경
             color: 'black'
@@ -341,7 +341,7 @@ const Main = () => {
             객관적 데이터로 개선 포인트 제시
           </div>
           <div style={{
-            fontSize: '32px',
+            fontSize: '28px',
             fontFamily: '"SeoulAlrim", "Noto Sans KR"',
             fontWeight: '500',
             lineHeight: '48px',
@@ -351,7 +351,7 @@ const Main = () => {
             여러분의 발표에서 개선할 수 있는 부분을 객관적으로 제시합니다
           </div>
           <div style={{
-            fontSize: '32px',
+            fontSize: '28px',
             fontFamily: '"SeoulAlrim", "Noto Sans KR"',
             fontWeight: '500',
             lineHeight: '48px',
@@ -379,7 +379,7 @@ const Main = () => {
           }}
         >
           <div style={{
-            fontSize: '48px',
+            fontSize: '44px',
             fontFamily: '"SeoulAlrim", "Noto Sans KR"',
             fontWeight: '700',  // 500 → 700으로 볼드체 변경
             color: 'black'
@@ -387,7 +387,7 @@ const Main = () => {
             팀을 구성하여 협업하기
           </div>
           <div style={{
-            fontSize: '32px',
+            fontSize: '28px',
             fontFamily: '"SeoulAlrim", "Noto Sans KR"',
             fontWeight: '500',
             lineHeight: '48px',
@@ -397,7 +397,7 @@ const Main = () => {
             발표 영상·대본을 공유하고 실시간 댓글로 피드백을 주고받을 수 있습니다
           </div>
           <div style={{
-            fontSize: '32px',
+            fontSize: '28px',
             fontFamily: '"SeoulAlrim", "Noto Sans KR"',
             fontWeight: '500',
             lineHeight: '48px',

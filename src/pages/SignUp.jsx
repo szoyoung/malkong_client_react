@@ -350,6 +350,16 @@ const SignUp = () => {
                   value={formData.password}
                   onChange={handleChange}
                 />
+                <Typography
+                  sx={{
+                    fontSize: '12px',
+                    color: '#6c757d',
+                    marginBottom: '16px',
+                    marginTop: '-8px'
+                  }}
+                >
+                  8자리 이상 비밀번호
+                </Typography>
                 <StyledTextField
                   required
                   name="confirmPassword"

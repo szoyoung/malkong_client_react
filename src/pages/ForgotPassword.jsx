@@ -333,6 +333,16 @@ const ForgotPassword = () => {
                 ),
               }}
             />
+            <Typography
+              sx={{
+                fontSize: '12px',
+                color: theme.palette.text.secondary,
+                marginBottom: '16px',
+                marginTop: '-8px'
+              }}
+            >
+              8자리 이상 비밀번호
+            </Typography>
             <StyledTextField
               label="새 비밀번호 확인"
               type={showConfirmPassword ? 'text' : 'password'}

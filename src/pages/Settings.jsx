@@ -128,8 +128,8 @@ const Settings = () => {
             return;
         }
         
-        if (passwordData.newPassword.length < 6) {
-            setGlobalError('비밀번호는 최소 6자 이상이어야 합니다.');
+        if (passwordData.newPassword.length < 8) {
+            setGlobalError('비밀번호는 최소 8자 이상이어야 합니다');
             return;
         }
 
@@ -378,6 +378,16 @@ const Settings = () => {
                                         onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
                                         margin="normal"
                                     />
+                                    <Typography
+                                        sx={{
+                                            fontSize: '12px',
+                                            color: '#6c757d',
+                                            marginTop: '4px',
+                                            marginBottom: '8px'
+                                        }}
+                                    >
+                                        8자리 이상 비밀번호
+                                    </Typography>
                                     <TextField
                                         fullWidth
                                         type="password"

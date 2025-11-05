@@ -99,7 +99,7 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
         {/* Logo */}
         <img
           src="/malkong_logo.png"
-          alt="또랑또랑"
+          alt="말콩"
           style={{
             height: '40px',
             cursor: 'pointer',
@@ -158,8 +158,7 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
                 e.target.style.transform = 'translateY(0)';
               }}
             >
-              <span></span>
-              <span>대시보드</span>
+              대시보드
             </div>
 
             {/* Comparison */}
@@ -194,8 +193,7 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
                 e.target.style.transform = 'translateY(0)';
               }}
             >
-              <span></span>
-              <span>발표 비교</span>
+              발표 비교
             </div>
 
             {/* Settings */}
@@ -230,8 +228,7 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
                 e.target.style.transform = 'translateY(0)';
               }}
             >
-              <span></span>
-              <span>설정</span>
+              설정
             </div>
 
             {/* Teams */}
@@ -266,8 +263,7 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
                 e.target.style.transform = 'translateY(0)';
               }}
             >
-              <span></span>
-              <span>팀 관리</span>
+              팀 관리
             </div>
 
             {/* Logout */}
@@ -334,7 +330,6 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
                 e.target.style.transform = 'translateY(0)';
               }}
             >
-             
               회원가입
             </div>
             <div
