@@ -17,31 +17,42 @@ import theme from '../theme';
 import useAuthCheck from '../hooks/useAuthCheck';
 
 // Styled Components
-const PageContainer = styled(Container)({
+const PageWrapper = styled(Box)({
   height: '100vh',
+  width: '100vw',
+  display: 'flex',
+  flexDirection: 'column',
+  overflow: 'hidden',
+  paddingTop: '-70px',
+  boxSizing: 'border-box',
+});
+
+const PageContainer = styled(Container)({
+  flex: 1,
   minWidth: '100vw',
   width: '100vw',
   maxWidth: '100vw',
+  minHeight: 0,
   display: 'flex',
   flexDirection: 'column',
+  justifyContent: 'center',
+  alignItems: 'center',
   padding: 0,
   margin: 0,
   background: '#FFFFFF',
   overflow: 'hidden',
+    marginTop: '-140px', 
+  height: 'calc(100vh - 70px)', 
 });
 
 const ContentContainer = styled(Box)({
-  flex: 1,
   display: 'flex',
   width: '100%',
-  height: '100vh',
   maxWidth: '1200px',
   margin: '0 auto',
   gap: '60px',
-  overflow: 'hidden',
   alignItems: 'center',
   justifyContent: 'center',
-  marginTop: '-70px', // Navbar 높이만큼 위로 올림
 });
 
 const LeftSection = styled(Box)({
@@ -49,7 +60,7 @@ const LeftSection = styled(Box)({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  padding: '40px',
+  padding: '20px',
   background: '#FFFFFF',
 });
 
@@ -58,7 +69,7 @@ const RightSection = styled(Box)({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  padding: '40px',
+  padding: '20px',
   background: '#FFFFFF',
 });
 
@@ -383,7 +394,7 @@ const ForgotPassword = () => {
   };
 
   return (
-    <>
+    <PageWrapper>
       <Navbar />
       <PageContainer>
         <ContentContainer>
@@ -405,8 +416,8 @@ const ForgotPassword = () => {
               )}
               {renderStepContent()}
               {step < 4 && (
-                <Box sx={{ 
-                  display: 'flex', 
+                <Box sx={{
+                  display: 'flex',
                   justifyContent: 'center',
                   marginTop: '24px',
                 }}>
@@ -419,7 +430,7 @@ const ForgotPassword = () => {
           </RightSection>
         </ContentContainer>
       </PageContainer>
-    </>
+    </PageWrapper>
   );
 };
 
