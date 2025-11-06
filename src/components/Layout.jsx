@@ -16,9 +16,10 @@ const Layout = ({ children }) => {
   const isDashboardPage = location.pathname === '/dashboard';
   const isVideoAnalysisPage = location.pathname.startsWith('/video-analysis/');
   const isComparisonPage = location.pathname === '/comparison';
-  
+  const isMainPage = location.pathname === '/';
+
   // 로그인하지 않은 상태이거나 특정 페이지에서는 사이드바를 표시하지 않음
-  const shouldShowSidebar = isAuthenticated && !isDashboardPage && !isVideoAnalysisPage && !isComparisonPage;
+  const shouldShowSidebar = isAuthenticated && !isDashboardPage && !isVideoAnalysisPage && !isComparisonPage && !isMainPage;
 
   // 페이지 이동 시 localStorage에서 사이드바 상태 동기화
   useEffect(() => {
@@ -28,8 +29,8 @@ const Layout = ({ children }) => {
     }
   }, [location.pathname]);
 
-  // 대시보드, 비디오 분석, 비교 페이지는 레이아웃을 우회
-  if (isDashboardPage || isVideoAnalysisPage || isComparisonPage) {
+  // 메인, 대시보드, 비디오 분석, 비교 페이지는 레이아웃을 우회
+  if (isMainPage || isDashboardPage || isVideoAnalysisPage || isComparisonPage) {
     return children;
   }
 

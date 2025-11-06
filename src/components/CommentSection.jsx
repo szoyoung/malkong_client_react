@@ -32,15 +32,16 @@ import {
   ExpandLess as ExpandLessIcon,
   Close as CloseIcon
 } from '@mui/icons-material';
-import { 
-  fetchComments, 
-  createComment, 
-  updateComment, 
-  deleteComment, 
+import {
+  fetchComments,
+  createComment,
+  updateComment,
+  deleteComment,
   searchComments,
   clearComments,
   setSortBy
 } from '../store/slices/commentSlice';
+import { fetchUserInfo } from '../store/slices/authSlice';
 
 const CommentSection = ({ presentationId, currentTime = 0, onSeekToTime }) => {
   const dispatch = useDispatch();
@@ -60,15 +61,23 @@ const CommentSection = ({ presentationId, currentTime = 0, onSeekToTime }) => {
     id: user.userId || user.id,
     name: user.name || user.username || user.email?.split('@')[0] || '사용자',
     email: user.email || 'user@example.com',
-    avatar: user.avatar || null
+    avatar: user.profileImage || user.avatar || null
   } : null;
+
+  // 사용자 정보 가져오기 (프로필 이미지 포함)
+  useEffect(() => {
+    // 사용자 정보가 없거나 프로필 이미지가 없으면 최신 정보 가져오기
+    if (!user || !user.profileImage) {
+      dispatch(fetchUserInfo());
+    }
+  }, [dispatch, user]);
 
   // 댓글 목록 조회
   useEffect(() => {
     if (presentationId) {
       dispatch(fetchComments({ presentationId, sortBy }));
     }
-    
+
     // 컴포넌트 언마운트 시 댓글 상태 정리
     return () => {
       dispatch(clearComments());
@@ -274,7 +283,10 @@ const CommentSection = ({ presentationId, currentTime = 0, onSeekToTime }) => {
       <Box key={comment.id} sx={{ mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
           <ListItemAvatar>
-            <Avatar sx={{ width: 32, height: 32, fontSize: '14px' }}>
+            <Avatar
+              src={comment.userProfileImage || comment.userAvatar}
+              sx={{ width: 32, height: 32, fontSize: '14px' }}
+            >
               {(comment.userName || '사용자').charAt(0)}
             </Avatar>
           </ListItemAvatar>
@@ -386,7 +398,10 @@ const CommentSection = ({ presentationId, currentTime = 0, onSeekToTime }) => {
         {isReplying && !isReply && (
           <Box sx={{ ml: 4, mt: 1, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-              <Avatar sx={{ width: 24, height: 24, fontSize: '12px', mr: 1 }}>
+              <Avatar
+                src={currentUser.avatar}
+                sx={{ width: 24, height: 24, fontSize: '12px', mr: 1 }}
+              >
                 {currentUser.name.charAt(0)}
               </Avatar>
               <Box sx={{ flex: 1 }}>
@@ -509,9 +524,12 @@ const CommentSection = ({ presentationId, currentTime = 0, onSeekToTime }) => {
       {currentUser && (
         <Box sx={{ mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-            <Avatar sx={{ width: 40, height: 40 }}>
+            <Avatar
+              src={currentUser.avatar}
+              sx={{ width: 40, height: 40 }}
+            >
               {currentUser.name.charAt(0)}
-          </Avatar>
+            </Avatar>
           <Box sx={{ flex: 1 }}>
             <TextField
               fullWidth

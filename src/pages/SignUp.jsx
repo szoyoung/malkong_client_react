@@ -190,8 +190,9 @@ const SignUp = () => {
 
   useAuthCheck('/dashboard');
 
-  // Prevent body scroll on this page
+  // Prevent body scroll on this page and reset scroll position
   useEffect(() => {
+    window.scrollTo(0, 0);
     document.body.style.overflow = 'hidden';
     document.body.style.height = '100vh';
     return () => {

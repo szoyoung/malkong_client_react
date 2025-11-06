@@ -411,12 +411,11 @@ const TeamDetail = ({ teamId, onBack, onEdit, onInviteMember }) => {
                       <React.Fragment key={member.id}>
                         <ListItem>
                           <ListItemAvatar>
-                            <Avatar>
-                              {member.userAvatar ? (
-                                <img src={member.userAvatar} alt={member.userName} />
-                              ) : (
-                                member.userName.charAt(0)
-                              )}
+                            <Avatar
+                              src={member.userProfileImage || member.userAvatar || member.profileImage}
+                              sx={{ width: 40, height: 40 }}
+                            >
+                              {member.userName?.charAt(0)}
                             </Avatar>
                           </ListItemAvatar>
                           <ListItemText

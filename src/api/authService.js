@@ -121,7 +121,7 @@ const authService = {
                             name: payload.name || email.split('@')[0],
                             provider: 'LOCAL' // JWT 토큰이면 일반 로그인
                         };
-                        
+
                         console.log('JWT 토큰에서 사용자 정보 추출:', userInfo);
                         console.log('JWT userId 필드:', payload.userId);
                     }
@@ -131,25 +131,21 @@ const authService = {
                 // JWT가 아니면 Google OAuth 토큰으로 간주
             }
 
-            // JWT에서 정보를 얻었고 LOCAL provider면 백엔드 API 호출하지 않음
-            if (userInfo && userInfo.provider === 'LOCAL') {
-                return userInfo;
-            }
-
             // Google OAuth 토큰이거나 JWT에서 정보를 얻지 못한 경우 백엔드 API 호출
             try {
                 const response = await api.get('/api/auth/me');
-                
+
                 if (response.data) {
                     const userData = {
                         userId: response.data.userId,
                         email: response.data.email,
                         name: response.data.name,
-                        provider: response.data.provider || 'GOOGLE'
+                        provider: response.data.provider || 'GOOGLE',
+                        profileImage: response.data.profileImage || null
                     };
 
                     console.log('백엔드에서 사용자 정보 조회 성공:', userData);
-                    
+
                     return userData;
                 }
             } catch (apiError) {
