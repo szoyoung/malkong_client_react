@@ -80,13 +80,25 @@ const LogoSection = styled(Box)({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  gap: '16px',
+  gap: '8px',
 });
 
-const LogoImage = styled('img')({
-  width: 'auto',
-  height: '120px', // 텍스트 크기 72px과 비슷한 높이
-  objectFit: 'contain',
+const LogoText = styled('div')({
+  fontSize: '56px',
+  fontWeight: '700',
+  color: '#0f172a',
+  fontFamily: '"Noto Sans KR", sans-serif',
+  letterSpacing: '-2px',
+  cursor: 'default',
+  lineHeight: '1.2',
+});
+
+const LogoSubtext = styled('div')({
+  fontSize: '14px',
+  fontWeight: '400',
+  color: '#94a3b8',
+  fontFamily: '"Noto Sans KR", sans-serif',
+  lineHeight: '1.4',
 });
 
 const SignUpCard = styled(Box)({
@@ -96,7 +108,7 @@ const SignUpCard = styled(Box)({
   borderRadius: '16px',
   background: '#FFFFFF',
   boxShadow: theme.shadows.md,
-  border: `1px solid ${theme.palette.border}`,
+  border: '1px solid #E0E0E0',
 });
 
 const FormTitle = styled(Typography)({
@@ -282,7 +294,8 @@ const SignUp = () => {
         <ContentContainer>
           <LeftSection>
             <LogoSection>
-              <LogoImage src="/malkong_logo.png" alt="또랑또랑" />
+              <LogoText>말콩</LogoText>
+              <LogoSubtext>AI 발표 연습 서비스</LogoSubtext>
             </LogoSection>
           </LeftSection>
 

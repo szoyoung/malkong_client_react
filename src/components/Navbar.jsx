@@ -97,13 +97,18 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
         )}
 
         {/* Logo */}
-        <img
-          src="/malkong_logo.png"
-          alt="말콩"
+        <div
           style={{
             height: '40px',
+            fontSize: '28px',
+            fontWeight: '600',
+            color: '#0f172a',
             cursor: 'pointer',
-            transition: 'all 0.3s ease'
+            transition: 'all 0.3s ease',
+            display: 'flex',
+            alignItems: 'center',
+            fontFamily: '"Noto Sans KR", sans-serif',
+            letterSpacing: '-0.5px'
           }}
           onClick={() => handleNavigation(isAuthenticated ? '/dashboard' : '/')}
           onMouseEnter={(e) => {
@@ -114,7 +119,9 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
             e.target.style.transform = 'translateY(0)';
             e.target.style.opacity = '1';
           }}
-        />
+        >
+          말콩
+        </div>
       </div>
 
       {/* Right Section - Navigation Menu */}
