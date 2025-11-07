@@ -37,7 +37,7 @@ const defaultAnalysisData = {
         expression: {
             grade: 'N/A',
             score: 75,
-            text: '표정 분석 기능은 현재 개발 중입니다.',
+            text: '불안 분석 기능은 현재 개발 중입니다.',
         },
         pitch: {
             grade: 'N/A',
@@ -127,7 +127,7 @@ const VideoAnalysis = () => {
     const labels = {
         voice: '음성',
         speed: '속도',
-        expression: '표정',
+        expression: '불안',
         pitch: '피치',
         clarity: '명확성'
     };
@@ -374,9 +374,9 @@ const VideoAnalysis = () => {
                 text: voiceAnalysisData.wpmComment || '말하기 속도가 적당합니다.'
             },
             expression: {
-                grade: voiceAnalysisData.expressionGrade || 'C',
+                grade: voiceAnalysisData.anxietyGrade || 'C',
                 score: scores.expression,
-                text: voiceAnalysisData.expressionText || '표정 분석이 완료되었습니다.'
+                text: ''
             },
             pitch: {
                 grade: voiceAnalysisData.pitchGrade || 'C',
@@ -428,7 +428,7 @@ const VideoAnalysis = () => {
                 expression: {
                     grade: 'C',
                 score: scores.expression,
-                    text: '표정 분석이 완료되지 않았습니다.',
+                    text: '불안 분석이 완료되지 않았습니다.',
                 },
                 pitch: {
                 grade: 'C',
@@ -470,7 +470,7 @@ const VideoAnalysis = () => {
     };
 
     const calculateExpressionScore = (data) => {
-        if (!data || !data.expressionGrade) return 'C';
+        if (!data || !data.anxietyGrade) return 'C';
         
         // 한글 등급을 영문 등급으로 변환
         const koreanToEnglish = {
@@ -481,7 +481,7 @@ const VideoAnalysis = () => {
             '매우 나쁨': 'F'
         };
         
-        return koreanToEnglish[data.expressionGrade] || data.expressionGrade;
+        return koreanToEnglish[data.anxietyGrade] || data.anxietyGrade;
     };
 
     const calculateClarityScore = (data) => {
@@ -525,7 +525,7 @@ const VideoAnalysis = () => {
                 expression: {
                     grade: 'N/A',
                     score: 75,
-                    text: '표정의 자연스러움과 적절성을 평가합니다.',
+                    text: '불안 수준의 적절성을 평가합니다.',
                 },
                 pitch: {
                     grade: 'N/A',

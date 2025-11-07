@@ -6,7 +6,7 @@ const PentagonChart = ({ data = {}, analysisDetails, size = 350, showLabels = tr
     const labels = {
         voice: '음성',
         speed: '속도',
-        expression: '표정',
+        expression: '불안',
         pitch: '피치',
         clarity: '명확성'
     };

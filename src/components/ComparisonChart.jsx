@@ -132,7 +132,7 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
         return {
             voice: metrics.intensityGrade || 'C',
             speed: metrics.wpmGrade || 'C',
-            expression: metrics.expressionGrade || 'C',
+            expression: metrics.anxietyGrade || 'C',
             pitch: metrics.pitchGrade || 'C',
             clarity: convertPronunciationToGrade(metrics.pronunciationScore)
         };
@@ -239,7 +239,7 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
         }
 
         // Labels and axes (5각형에 맞게 5개 메트릭)
-        const axisLabels = ['음성 강도', '말하기 속도', '표정', '피치', '명확성'];
+        const axisLabels = ['음성 강도', '말하기 속도', '불안', '피치', '명확성'];
         const axisOrder = ['voice', 'speed', 'expression', 'pitch', 'clarity'];
 
         // Draw data polygon for presentation 1 (파란색)
@@ -479,7 +479,7 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
                                 grade={grades1.speed}
                             />
                             <MetricItemWithGrade 
-                                label="표정" 
+                                label="불안" 
                                 value={formatEmotionAnalysis(parseEmotionAnalysis(metrics1.emotionAnalysis))}
                                 grade={grades1.expression}
                             />
@@ -518,7 +518,7 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
                                 grade={grades2.speed}
                             />
                             <MetricItemWithGrade 
-                                label="표정" 
+                                label="불안" 
                                 value={formatEmotionAnalysis(parseEmotionAnalysis(metrics2.emotionAnalysis))}
                                 grade={grades2.expression}
                             />

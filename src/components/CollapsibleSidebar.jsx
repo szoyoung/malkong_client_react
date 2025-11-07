@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import topicService from '../api/topicService';
 import videoAnalysisService from '../api/videoAnalysisService';
@@ -17,6 +17,8 @@ import { fetchUserTeams, createTeam, joinTeamByInvite } from '../store/slices/te
 
 const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const params = useParams();
     const user = useSelector(state => state.auth.user);
     const topics = useSelector(state => state.topic.topics) || [];
     const dispatch = useDispatch();
@@ -257,11 +259,11 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
     };
 
     const calculateExpressionScore = (data) => {
-        if (!data.expressionGrade) return 75;
+        if (!data.anxietyGrade) return 75;
         
         // DB에서 가져온 등급을 그대로 사용하여 점수 변환
         const gradeMap = { 'A': 90, 'B': 80, 'C': 70, 'D': 60, 'E': 50, 'F': 40 };
-        return gradeMap[data.expressionGrade] || 75;
+        return gradeMap[data.anxietyGrade] || 75;
     };
 
     const calculateClarityScore = (data) => {
@@ -286,8 +288,8 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
             wpmGrade: data.voiceAnalysis?.wpmGrade || '보통',
             wpmAvg: data.voiceAnalysis?.wpmAvg,
             wpmComment: data.voiceAnalysis?.wpmComment || '말하기 속도가 적당합니다.',
-            expressionGrade: data.voiceAnalysis?.expressionGrade || '보통',
-            expressionText: data.voiceAnalysis?.expressionText || '표정이 자연스럽습니다.',
+            expressionGrade: data.voiceAnalysis?.anxietyGrade || '보통',
+            expressionText: '',
             transcription: data.sttResult?.transcription || '',
             pronunciationScore: data.sttResult?.pronunciationScore || 0.75
         };
@@ -296,7 +298,7 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
         const grades = {
             voice: fastApiData.intensityGrade,
             speed: fastApiData.wpmGrade,
-            expression: fastApiData.expressionGrade,
+            expression: fastApiData.anxietyGrade,
             pitch: fastApiData.pitchGrade,
             clarity: fastApiData.pronunciationScore ? 
                 (fastApiData.pronunciationScore >= 0.8 ? 'A' :
@@ -610,6 +612,15 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
                 ...prev,
                 [currentTopic.id]: prev[currentTopic.id]?.filter(p => p.id !== presentationId) || []
             }));
+        }
+        
+        // 분석 페이지에서 현재 보고 있는 프레젠테이션을 삭제한 경우 대시보드로 이동
+        const currentPath = location.pathname;
+        const currentPresentationId = params.presentationId || params.id;
+        
+        if (currentPath.includes('/video-analysis/') && currentPresentationId === presentationId) {
+            console.log('분석 페이지에서 현재 프레젠테이션 삭제 - 대시보드로 이동');
+            navigate('/dashboard', { replace: true });
         }
     };
 

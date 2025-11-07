@@ -3,11 +3,12 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import CollapsibleSidebar from '../components/CollapsibleSidebar';
 import Navbar from '../components/Navbar';
 import VideoUploader from '../components/VideoUploader';
+import TopicCreator from '../components/TopicCreator';
 import { CameraRecorder as CameraRecorderUtil, formatTime } from '../utils/cameraUtils';
 import topicService from '../api/topicService';
 import videoAnalysisService from '../api/videoAnalysisService';
 import { useSelector, useDispatch } from 'react-redux';
-import { setTopics, setCurrentTopic, addPresentation } from '../store/slices/topicSlice';
+import { setTopics, setCurrentTopic, addPresentation, addTopic } from '../store/slices/topicSlice';
 import { fetchUserInfo, setUser, logout } from '../store/slices/authSlice';
 import useError from '../hooks/useError';
 import useLoading from '../hooks/useLoading';
@@ -36,6 +37,7 @@ const Dashboard = () => {
     // 토픽 선택 관련 상태
     const [showTopicSelector, setShowTopicSelector] = useState(false);
     const [selectedTopicForUpload, setSelectedTopicForUpload] = useState(null);
+    const [showTopicCreator, setShowTopicCreator] = useState(false);
     
     // 발표 삭제 선택 모달 상태
     const [showDeleteSelector, setShowDeleteSelector] = useState(false);
@@ -314,6 +316,35 @@ const Dashboard = () => {
                     setError(error.message);
                 }
             }
+        }
+    };
+
+    const handleTopicCreated = async (newTopic) => {
+        console.log('새 토픽 생성 완료:', newTopic);
+        dispatch(addTopic(newTopic));
+        dispatch(setCurrentTopic(newTopic));
+        setShowTopicCreator(false);
+        
+        // 토픽 생성 후 대기 중인 업로드 처리
+        if (selectedTopicForUpload) {
+            if (selectedTopicForUpload === 'upload' || selectedTopicForUpload === 'recording') {
+                // 업로드 또는 녹화 요청인 경우 VideoUploader 열기
+                setShowUploader(true);
+                setShowTopicSelector(false);
+                setSelectedTopicForUpload(null);
+            } else {
+                // 파일 업로드 데이터인 경우 처리
+                try {
+                    await handleFileUpload(selectedTopicForUpload);
+                    setShowTopicSelector(false);
+                    setSelectedTopicForUpload(null);
+                } catch (error) {
+                    setError(error.message);
+                }
+            }
+        } else {
+            // 토픽만 생성한 경우 토픽 선택기 닫기
+            setShowTopicSelector(false);
         }
     };
 
@@ -796,11 +827,36 @@ const Dashboard = () => {
                                     </div>
                                     <div style={{
                                         fontSize: '14px',
-                                        lineHeight: '1.5'
+                                        lineHeight: '1.5',
+                                        marginBottom: '20px'
                                     }}>
-                                        사이드바의 "Private Topics" 옆 + 버튼을 클릭하여<br />
-                                        새 토픽을 만들어보세요!
+                                        새 토픽을 만들어서 분석을 시작하세요!
                                     </div>
+                                    <button
+                                        onClick={() => {
+                                            setShowTopicCreator(true);
+                                        }}
+                                        style={{
+                                            padding: '12px 24px',
+                                            backgroundColor: '#007bff',
+                                            color: '#ffffff',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            fontSize: '14px',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            fontFamily: 'Inter, sans-serif',
+                                            transition: 'background-color 0.2s ease'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.target.style.backgroundColor = '#0056b3';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.backgroundColor = '#007bff';
+                                        }}
+                                    >
+                                        + 새 토픽 만들기
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -986,6 +1042,22 @@ const Dashboard = () => {
                     currentTopic={currentTopic}
                     topics={topics}
                     onTopicSelect={handleTopicSelect}
+                />
+            )}
+
+            {/* Topic Creator Modal */}
+            {showTopicCreator && (
+                <TopicCreator
+                    open={showTopicCreator}
+                    onClose={() => {
+                        setShowTopicCreator(false);
+                        // 토픽 생성 취소 시 토픽 선택기도 닫기
+                        if (!currentTopic) {
+                            setShowTopicSelector(false);
+                            setSelectedTopicForUpload(null);
+                        }
+                    }}
+                    onTopicCreated={handleTopicCreated}
                 />
             )}
             
