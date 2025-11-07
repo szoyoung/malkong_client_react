@@ -1158,19 +1158,29 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
                                                     <div style={{
                                                         width: '180px',
                                                         height: '180px',
+                                                        aspectRatio: '1',
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
-                                                        margin: '0 auto'
+                                                        margin: '0 auto',
+                                                        overflow: 'hidden'
                                                     }}>
                                                         {hasAnalysis ? (
-                                                            <PentagonChart
-                                                                data={analysisData.grades || analysisData.scores}
-                                                                size={180}
-                                                                showLabels={false}
-                                                                showGrid={false}
-                                                                isPreview={true}
-                                                            />
+                                                            <div style={{
+                                                                width: '180px',
+                                                                height: '180px',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center'
+                                                            }}>
+                                                                <PentagonChart
+                                                                    data={analysisData.grades || analysisData.scores}
+                                                                    size={180}
+                                                                    showLabels={false}
+                                                                    showGrid={false}
+                                                                    isPreview={true}
+                                                                />
+                                                            </div>
                                                         ) : (
                                                             <div style={{
                                                                 fontSize: '16px',
@@ -1320,7 +1330,7 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
                             fontFamily: 'Inter, sans-serif',
                             fontWeight: '700'
                         }}>
-                            Private Topics ({privateTopics.length})
+                            개인 토픽 ({privateTopics.length})
                         </div>
                     </div>
                     
@@ -1415,7 +1425,7 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
                             fontFamily: 'Inter, sans-serif',
                             fontWeight: '700'
                         }}>
-                            Team Projects ({teams.length})
+                            팀 프로젝트 ({teams.length})
                         </div>
                     </div>
                     
@@ -1428,30 +1438,27 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
                         <div
                             onClick={() => setShowTeamJoin(true)}
                             style={{
-                                width: '24px',
-                                height: '24px',
-                                borderRadius: '50%',
-                                backgroundColor: '#28a745',
-                                color: '#ffffff',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '12px',
-                                fontWeight: 'bold',
+                                fontSize: '11px',
+                                color: '#1976d2',
+                                backgroundColor: '#e3f2fd',
+                                borderRadius: '8px',
+                                padding: '4px 8px',
                                 cursor: 'pointer',
-                                transition: 'all 0.2s ease'
+                                fontWeight: '600',
+                                transition: 'all 0.2s ease',
+                                whiteSpace: 'nowrap'
                             }}
                             onMouseEnter={(e) => {
-                                e.target.style.backgroundColor = '#218838';
-                                e.target.style.transform = 'scale(1.1)';
+                                e.currentTarget.style.backgroundColor = '#1976d2';
+                                e.currentTarget.style.color = '#ffffff';
                             }}
                             onMouseLeave={(e) => {
-                                e.target.style.backgroundColor = '#28a745';
-                                e.target.style.transform = 'scale(1)';
+                                e.currentTarget.style.backgroundColor = '#e3f2fd';
+                                e.currentTarget.style.color = '#1976d2';
                             }}
                             title="팀 참가"
                         >
-                            ➕
+                            팀 참가
                         </div>
                         
                         {/* 팀 생성 버튼 */}
@@ -1591,7 +1598,7 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
                                                     width: '20px',
                                                     height: '20px',
                                                     borderRadius: '50%',
-                                                    backgroundColor: '#6c757d',
+                                                    backgroundColor: '#6c757d79',
                                                     color: '#ffffff',
                                                     display: 'flex',
                                                     alignItems: 'center',
@@ -1601,16 +1608,16 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
                                                     transition: 'all 0.2s ease'
                                                 }}
                                                 onMouseEnter={(e) => {
-                                                    e.target.style.backgroundColor = '#495057';
+                                                    e.target.style.backgroundColor = '#495057ac';
                                                     e.target.style.transform = 'scale(1.1)';
                                                 }}
                                                 onMouseLeave={(e) => {
-                                                    e.target.style.backgroundColor = '#6c757d';
+                                                    e.target.style.backgroundColor = '#6c757d79';
                                                     e.target.style.transform = 'scale(1)';
                                                 }}
                                                 title="팀 상세 보기"
                                             >
-                                                👁
+                                                🔍
                                             </div>
                                             
                                             {/* 팀 초대 버튼 - 팀장/관리자만 표시 */}
@@ -1625,7 +1632,7 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
                                                         width: '20px',
                                                         height: '20px',
                                                         borderRadius: '50%',
-                                                        backgroundColor: '#ffc107',
+                                                        backgroundColor: '#ffc107d2',
                                                         color: '#000000',
                                                         display: 'flex',
                                                         alignItems: 'center',
@@ -1635,16 +1642,16 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
                                                         transition: 'all 0.2s ease'
                                                     }}
                                                     onMouseEnter={(e) => {
-                                                        e.target.style.backgroundColor = '#e0a800';
+                                                        e.target.style.backgroundColor = '#e0a800eb';
                                                         e.target.style.transform = 'scale(1.1)';
                                                     }}
                                                     onMouseLeave={(e) => {
-                                                        e.target.style.backgroundColor = '#ffc107';
+                                                        e.target.style.backgroundColor = '#ffc107d2';
                                                         e.target.style.transform = 'scale(1)';
                                                     }}
                                                     title="팀 초대 링크 생성"
                                                 >
-                                                    📧
+                                                    ✉️
                                                 </div>
                                             )}
                                             
@@ -1658,7 +1665,7 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
                                                     width: '20px',
                                                     height: '20px',
                                                     borderRadius: '50%',
-                                                    backgroundColor: '#28a745',
+                                                    backgroundColor: '#007bff',
                                                     color: '#ffffff',
                                                     display: 'flex',
                                                     alignItems: 'center',
@@ -1668,16 +1675,16 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
                                                     transition: 'all 0.2s ease'
                                                 }}
                                                 onMouseEnter={(e) => {
-                                                    e.target.style.backgroundColor = '#218838';
+                                                    e.target.style.backgroundColor = '#0056b3';
                                                     e.target.style.transform = 'scale(1.1)';
                                                 }}
                                                 onMouseLeave={(e) => {
-                                                    e.target.style.backgroundColor = '#28a745';
+                                                    e.target.style.backgroundColor = '#007bff';
                                                     e.target.style.transform = 'scale(1)';
                                                 }}
                                                 title="새 팀 토픽 만들기"
                                             >
-                                                ➕
+                                                +
                                             </div>
                                         </div>
                                         

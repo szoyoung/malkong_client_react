@@ -484,11 +484,6 @@ const VideoAnalysis = () => {
         return koreanToEnglish[data.anxietyGrade] || data.anxietyGrade;
     };
 
-    const calculateClarityScore = (data) => {
-        // 명확도 분석은 아직 구현되지 않음
-        return 'C';
-    };
-
     const calculatePronunciationScore = (data) => {
         if (!data || !data.pronunciationScore) return 'C';
         // 발음 점수는 0-1 범위이므로 A-E 등급으로 변환
@@ -1217,7 +1212,7 @@ const VideoAnalysis = () => {
                                 e.target.style.backgroundColor = '#9c27b0';
                             }}
                         >
-                            📊 발표 비교
+                             발표 비교
                         </button>
                         
                         <button
@@ -1242,7 +1237,7 @@ const VideoAnalysis = () => {
                                 e.target.style.backgroundColor = '#2C2C2C';
                             }}
                         >
-                            🏠 대시보드
+                             대시보드
                         </button>
                     </div>
                 </div>

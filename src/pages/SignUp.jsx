@@ -20,28 +20,42 @@ import useLoading from '../hooks/useLoading';
 import theme from '../theme';
 import useAuthCheck from '../hooks/useAuthCheck';
 
+const PageWrapper = styled(Box)({
+  height: '100vh',
+  width: '100vw',
+  display: 'flex',
+  flexDirection: 'column',
+  overflow: 'hidden',
+  paddingTop: '-70px',
+  boxSizing: 'border-box',
+});
+
 const PageContainer = styled(Container)({
-  minHeight: '100vh',
+  flex: 1,
   minWidth: '100vw',
   width: '100vw',
   maxWidth: '100vw',
+  minHeight: 0,
   display: 'flex',
   flexDirection: 'column',
+  justifyContent: 'center',
+  alignItems: 'center',
   padding: 0,
   margin: 0,
-  background: theme.palette.background.default,
-  overflowX: 'hidden',
-  paddingTop: '80px',
+  background: '#FFFFFF',
+  overflow: 'hidden',
+  marginTop: '-140px', // 🔥 fixed navbar 높이
+  height: 'calc(100vh - 70px)', // 🔥 남은 높이
 });
 
 const ContentContainer = styled(Box)({
-  flex: 1,
   display: 'flex',
   width: '100%',
-  minHeight: 'calc(100vh - 80px)', // Navbar 높이 제외
-  maxWidth: '1200px', // 전체 최대 너비 제한
-  margin: '0 auto', // 중앙 정렬
-  gap: '60px', // 좌우 섹션 간 간격 추가
+  maxWidth: '1200px',
+  margin: '0 auto',
+  gap: '60px',
+  alignItems: 'center',
+  justifyContent: 'center',
 });
 
 const LeftSection = styled(Box)({
@@ -49,8 +63,8 @@ const LeftSection = styled(Box)({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  padding: '40px',
-  background: theme.palette.background.default,
+  padding: '20px',
+  background: '#FFFFFF',
 });
 
 const RightSection = styled(Box)({
@@ -58,23 +72,33 @@ const RightSection = styled(Box)({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  padding: '40px',
-  background: theme.palette.background.default,
+  padding: '20px',
+  background: '#FFFFFF',
 });
 
 const LogoSection = styled(Box)({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  gap: '16px',
+  gap: '8px',
 });
 
-const LogoText = styled(Typography)({
-  color: theme.palette.text.primary,
-  fontSize: '72px', // 크기를 더 크게 조정
-  fontFamily: '"SeoulAlrim", "Noto Sans KR"', // 메인 페이지와 동일한 폰트
-  fontWeight: 800, // 메인 페이지와 동일한 굵기
-  letterSpacing: '-0.5px',
+const LogoText = styled('div')({
+  fontSize: '56px',
+  fontWeight: '700',
+  color: '#0f172a',
+  fontFamily: '"Noto Sans KR", sans-serif',
+  letterSpacing: '-2px',
+  cursor: 'default',
+  lineHeight: '1.2',
+});
+
+const LogoSubtext = styled('div')({
+  fontSize: '14px',
+  fontWeight: '400',
+  color: '#94a3b8',
+  fontFamily: '"Noto Sans KR", sans-serif',
+  lineHeight: '1.4',
 });
 
 const SignUpCard = styled(Box)({
@@ -82,9 +106,9 @@ const SignUpCard = styled(Box)({
   maxWidth: '400px',
   padding: '32px',
   borderRadius: '16px',
-  background: theme.palette.background.default,
+  background: '#FFFFFF',
   boxShadow: theme.shadows.md,
-  border: `1px solid ${theme.palette.border}`,
+  border: '1px solid #E0E0E0',
 });
 
 const FormTitle = styled(Typography)({
@@ -101,7 +125,7 @@ const StyledTextField = styled(TextField)({
   marginBottom: '16px',
   '& .MuiOutlinedInput-root': {
     borderRadius: '8px',
-    backgroundColor: theme.palette.background.default,
+    backgroundColor: '#FFFFFF',
     '& fieldset': {
       borderColor: theme.palette.border,
     },
@@ -143,10 +167,10 @@ const OutlinedButton = styled(Button)({
   fontWeight: 500,
   textTransform: 'none',
   border: `1px solid ${theme.palette.border}`,
-  background: theme.palette.background.default,
+  background: '#FFFFFF',
   color: theme.palette.text.primary,
   '&:hover': {
-    background: theme.palette.background.default,
+    background: '#F5F5F5',
   },
 });
 
@@ -177,6 +201,17 @@ const SignUp = () => {
   const [isSendingCode, setIsSendingCode] = useState(false);
 
   useAuthCheck('/dashboard');
+
+  // Prevent body scroll on this page and reset scroll position
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.body.style.overflow = 'hidden';
+    document.body.style.height = '100vh';
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.height = '';
+    };
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -253,16 +288,17 @@ const SignUp = () => {
   };
 
   return (
-    <>
+    <PageWrapper>
       <Navbar />
       <PageContainer>
         <ContentContainer>
           <LeftSection>
             <LogoSection>
-              <LogoText>또랑또랑</LogoText>
+              <LogoText>말콩</LogoText>
+              <LogoSubtext>AI 발표 연습 서비스</LogoSubtext>
             </LogoSection>
           </LeftSection>
-          
+
           <RightSection>
             <SignUpCard>
               <FormTitle>회원가입</FormTitle>
@@ -328,6 +364,16 @@ const SignUp = () => {
                   value={formData.password}
                   onChange={handleChange}
                 />
+                <Typography
+                  sx={{
+                    fontSize: '12px',
+                    color: '#6c757d',
+                    marginBottom: '16px',
+                    marginTop: '-8px'
+                  }}
+                >
+                  8자리 이상 비밀번호
+                </Typography>
                 <StyledTextField
                   required
                   name="confirmPassword"
@@ -354,7 +400,7 @@ const SignUp = () => {
           </RightSection>
         </ContentContainer>
       </PageContainer>
-    </>
+    </PageWrapper>
   );
 };
 
