@@ -1,20 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import './ToastNotification.css';
 
-const ToastNotification = ({ notification, onClose }) => {
+const ToastNotification = ({ notification, onClose, onClick }) => {
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
         // 애니메이션을 위한 딜레이
         setTimeout(() => setIsVisible(true), 10);
 
-        // 자동으로 닫힘 (5초)
-        const timer = setTimeout(() => {
-            setIsVisible(false);
-            setTimeout(() => onClose && onClose(), 300); // 애니메이션 완료 후 닫기
-        }, 5000);
-
-        return () => clearTimeout(timer);
+        // 자동 닫기 기능 제거 - 사용자가 직접 닫을 때까지 유지
     }, [onClose]);
 
     const handleClose = () => {
@@ -38,7 +32,8 @@ const ToastNotification = ({ notification, onClose }) => {
     return (
         <div 
             className={`toast-notification ${isVisible ? 'visible' : ''}`}
-            onClick={handleClose}
+            onClick={onClick}
+            style={{ cursor: onClick ? 'pointer' : 'default' }}
         >
             <div className="toast-icon">
                 {getNotificationIcon(notification.type)}
@@ -47,7 +42,15 @@ const ToastNotification = ({ notification, onClose }) => {
                 <div className="toast-title">{notification.title}</div>
                 <div className="toast-message">{notification.message}</div>
             </div>
-            <button className="toast-close" onClick={handleClose}>×</button>
+            <button 
+                className="toast-close" 
+                onClick={(e) => {
+                    e.stopPropagation(); // 이벤트 버블링 방지
+                    handleClose();
+                }}
+            >
+                ×
+            </button>
         </div>
     );
 };

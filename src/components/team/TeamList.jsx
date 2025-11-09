@@ -220,8 +220,11 @@ const TeamList = ({ onTeamSelect, onCreateTeam, onInviteMember }) => {
                     <AvatarGroup max={4} sx={{ justifyContent: 'flex-start' }}>
                       {team.members.slice(0, 4).map((member) => (
                         <Tooltip key={member.id} title={member.userName}>
-                          <Avatar sx={{ width: 32, height: 32, fontSize: '0.875rem' }}>
-                            {member.userName.charAt(0)}
+                          <Avatar
+                            src={member.userProfileImage || member.userAvatar || member.profileImage}
+                            sx={{ width: 32, height: 32, fontSize: '0.875rem' }}
+                          >
+                            {member.userName?.charAt(0)}
                           </Avatar>
                         </Tooltip>
                       ))}

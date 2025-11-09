@@ -103,7 +103,7 @@ const NotificationManager = () => {
                 
                 if (notification.relatedId) {
                     if (notification.type === 'AI_ANALYSIS_COMPLETE') {
-                        navigate(`/analysis/${notification.relatedId}`);
+                        navigate(`/video-analysis/${notification.relatedId}`);
                     } else if (notification.type === 'COMMENT') {
                         navigate(`/presentation/${notification.relatedId}`);
                     }
@@ -124,23 +124,25 @@ const NotificationManager = () => {
     const handleToastClick = () => {
         if (toastNotification && toastNotification.relatedId) {
             if (toastNotification.type === 'AI_ANALYSIS_COMPLETE') {
-                navigate(`/analysis/${toastNotification.relatedId}`);
+                navigate(`/video-analysis/${toastNotification.relatedId}`);
+                // 분석 페이지로 이동하면 토스트 닫기
+                setToastNotification(null);
             } else if (toastNotification.type === 'COMMENT') {
                 navigate(`/presentation/${toastNotification.relatedId}`);
+                // 프레젠테이션 페이지로 이동하면 토스트 닫기
+                setToastNotification(null);
             }
         }
-        handleCloseToast();
     };
 
     return (
         <>
             {toastNotification && (
-                <div onClick={handleToastClick} style={{ cursor: 'pointer' }}>
-                    <ToastNotification 
-                        notification={toastNotification} 
-                        onClose={handleCloseToast}
-                    />
-                </div>
+                <ToastNotification 
+                    notification={toastNotification} 
+                    onClose={handleCloseToast}
+                    onClick={handleToastClick}
+                />
             )}
         </>
     );

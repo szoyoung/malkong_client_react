@@ -128,8 +128,8 @@ const Settings = () => {
             return;
         }
         
-        if (passwordData.newPassword.length < 6) {
-            setGlobalError('비밀번호는 최소 6자 이상이어야 합니다.');
+        if (passwordData.newPassword.length < 8) {
+            setGlobalError('비밀번호는 최소 8자 이상이어야 합니다');
             return;
         }
 
@@ -378,6 +378,16 @@ const Settings = () => {
                                         onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
                                         margin="normal"
                                     />
+                                    <Typography
+                                        sx={{
+                                            fontSize: '12px',
+                                            color: '#6c757d',
+                                            marginTop: '4px',
+                                            marginBottom: '8px'
+                                        }}
+                                    >
+                                        8자리 이상 비밀번호
+                                    </Typography>
                                     <TextField
                                         fullWidth
                                         type="password"
@@ -430,7 +440,7 @@ const Settings = () => {
                         <Card>
                             <CardContent>
                                 <Typography variant="h6" color="error" gutterBottom>
-                                    위험 구역
+                                    계정 삭제
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary" paragraph>
                                     계정을 삭제하면 모든 데이터가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.

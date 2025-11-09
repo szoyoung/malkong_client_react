@@ -243,11 +243,22 @@ const TopicCreator = ({ open, onClose, onTopicCreated, isTeamTopic = false, team
             onClose={handleClose}
             maxWidth="sm"
             fullWidth
+            slotProps={{
+                backdrop: {
+                    sx: {
+                        zIndex: 10001
+                    }
+                }
+            }}
             PaperProps={{
                 sx: {
                     borderRadius: 2,
-                    padding: 1
+                    padding: 1,
+                    zIndex: 10001
                 }
+            }}
+            sx={{
+                zIndex: 10001
             }}
         >
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

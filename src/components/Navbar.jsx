@@ -97,27 +97,30 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
         )}
 
         {/* Logo */}
-        <div 
+        <div
           style={{
-            color: '#000000',
-            fontSize: '28px', 
-            fontFamily: 'Inter, sans-serif', 
-            fontWeight: '700', 
-            lineHeight: '36px', 
+            height: '40px',
+            fontSize: '28px',
+            fontWeight: '600',
+            color: '#0f172a',
             cursor: 'pointer',
-            transition: 'all 0.3s ease'
+            transition: 'all 0.3s ease',
+            display: 'flex',
+            alignItems: 'center',
+            fontFamily: '"Noto Sans KR", sans-serif',
+            letterSpacing: '-0.5px'
           }}
           onClick={() => handleNavigation(isAuthenticated ? '/dashboard' : '/')}
           onMouseEnter={(e) => {
-            e.target.style.color = '#333333';
             e.target.style.transform = 'translateY(-1px)';
+            e.target.style.opacity = '0.8';
           }}
           onMouseLeave={(e) => {
-            e.target.style.color = '#000000';
             e.target.style.transform = 'translateY(0)';
+            e.target.style.opacity = '1';
           }}
         >
-          또랑또랑
+          말콩
         </div>
       </div>
 
@@ -162,8 +165,7 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
                 e.target.style.transform = 'translateY(0)';
               }}
             >
-              <span>🏠</span>
-              <span>대시보드</span>
+              대시보드
             </div>
 
             {/* Comparison */}
@@ -198,8 +200,7 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
                 e.target.style.transform = 'translateY(0)';
               }}
             >
-              <span>📊</span>
-              <span>발표 비교</span>
+              발표 비교
             </div>
 
             {/* Settings */}
@@ -234,8 +235,7 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
                 e.target.style.transform = 'translateY(0)';
               }}
             >
-              <span>⚙️</span>
-              <span>설정</span>
+              설정
             </div>
 
             {/* Teams */}
@@ -270,8 +270,7 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
                 e.target.style.transform = 'translateY(0)';
               }}
             >
-              <span>👥</span>
-              <span>팀 관리</span>
+              팀 관리
             </div>
 
             {/* Logout */}
@@ -307,57 +306,72 @@ const Navbar = ({ isCollapsed, onToggleSidebar, showSidebarToggle = false }) => 
         ) : (
           // 로그인되지 않은 경우: 회원가입, 로그인 버튼
           <>
-            <div 
+            <div
               style={{
-                padding: '10px 20px',
-                color: '#6c757d',
-                fontSize: '16px', 
-                fontFamily: 'Inter, sans-serif', 
-                fontWeight: '500', 
+                padding: '10px 16px',
+                color: location.pathname === '/signup' ? '#1976d2' : '#6c757d',
+                fontSize: '16px',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: '500',
                 cursor: 'pointer',
                 borderRadius: '25px',
                 transition: 'all 0.3s ease',
-                background: 'transparent'
+                background: location.pathname === '/signup' ? '#e3f2fd' : 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
               }}
               onClick={() => handleNavigation('/signup')}
               onMouseEnter={(e) => {
-                e.target.style.background = '#f8f9fa';
-                e.target.style.color = '#000000';
+                if (location.pathname !== '/signup') {
+                  e.target.style.background = '#f8f9fa';
+                  e.target.style.color = '#000000';
+                }
                 e.target.style.transform = 'translateY(-2px)';
               }}
               onMouseLeave={(e) => {
-                e.target.style.background = 'transparent';
-                e.target.style.color = '#6c757d';
+                if (location.pathname !== '/signup') {
+                  e.target.style.background = 'transparent';
+                  e.target.style.color = '#6c757d';
+                }
                 e.target.style.transform = 'translateY(0)';
               }}
             >
-              Sign Up
+              회원가입
             </div>
-            <div 
+            <div
               style={{
-                padding: '10px 20px',
-                color: '#6c757d',
-                fontSize: '16px', 
-                fontFamily: 'Inter, sans-serif', 
-                fontWeight: '500', 
+                padding: '10px 16px',
+                color: location.pathname === '/login' ? '#1976d2' : '#6c757d',
+                fontSize: '16px',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: '500',
                 cursor: 'pointer',
                 borderRadius: '25px',
                 transition: 'all 0.3s ease',
-                background: 'transparent'
+                background: location.pathname === '/login' ? '#e3f2fd' : 'transparent',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
               }}
               onClick={() => handleNavigation('/login')}
               onMouseEnter={(e) => {
-                e.target.style.background = '#f8f9fa';
-                e.target.style.color = '#000000';
+                if (location.pathname !== '/login') {
+                  e.target.style.background = '#f8f9fa';
+                  e.target.style.color = '#000000';
+                }
                 e.target.style.transform = 'translateY(-2px)';
               }}
               onMouseLeave={(e) => {
-                e.target.style.background = 'transparent';
-                e.target.style.color = '#6c757d';
+                if (location.pathname !== '/login') {
+                  e.target.style.background = 'transparent';
+                  e.target.style.color = '#6c757d';
+                }
                 e.target.style.transform = 'translateY(0)';
               }}
             >
-              Login
+              
+              로그인
             </div>
           </>
         )}
