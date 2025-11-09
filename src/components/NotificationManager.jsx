@@ -38,29 +38,17 @@ const NotificationManager = () => {
                     
                     // 새 알림이 있는지 확인
                     if (lastNotificationIdRef.current !== notificationId) {
-                        console.log('🆕 새 알림 발견!');
                         // 두 번째 알림부터 표시 (초기 로드 제외)
                         if (lastNotificationIdRef.current !== null) {
-                            console.log('🎉 토스트 알림 표시:', latestNotification.title);
                             // 새 알림 표시
                             showBrowserNotification(latestNotification);
                             // 토스트 알림 표시
                             setToastNotification(latestNotification);
-                        } else {
-                            console.log('⏭️ 초기 로드 - 알림 표시 안함');
                         }
                         lastNotificationIdRef.current = notificationId;
-                    } else {
-                        console.log('✅ 같은 알림 - 토스트 표시 안함');
                     }
 
                     dispatch(setNotifications(notificationsData));
-                    
-                    // 디버깅용 로그
-                    console.log('📬 알림 확인:', notificationsData.length, '개');
-                    console.log('최신 알림:', latestNotification);
-                    console.log('알림 ID:', notificationId);
-                    console.log('현재 마지막 알림 ID:', lastNotificationIdRef.current);
                 }
             } catch (error) {
                 // 모든 에러를 조용히 처리 (콘솔 로그 없음)

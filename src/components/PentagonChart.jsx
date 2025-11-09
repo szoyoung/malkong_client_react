@@ -71,12 +71,15 @@ const PentagonChart = ({ data = {}, analysisDetails, size = 350, showLabels = tr
     // 등급에 따른 색상 반환
     const getGradeColor = (grade) => {
         switch (grade) {
-            case 'A': return colors.accent;
-            case 'B': return colors.accent;
-            case 'C': return colors.warning;
-            case 'D': return colors.danger;
-            case 'E': return colors.danger;
-            default: return colors.warning;
+            case 'A':
+            case 'B':
+                return colors.accent;
+            case 'C':
+                return colors.warning;
+            case 'D':
+                return colors.danger;
+            default:
+                return colors.warning;
         }
     };
 
@@ -182,9 +185,9 @@ const PentagonChart = ({ data = {}, analysisDetails, size = 350, showLabels = tr
             let normalizedValue;
             
             if (typeof value === 'string') {
-                // 등급 기반 값 (A=1.0, B=0.8, C=0.6, D=0.4, E=0.2, F=0.0)
-                const gradeValues = { 'A': 1.0, 'B': 0.8, 'C': 0.6, 'D': 0.4, 'E': 0.2, 'F': 0.0 };
-                normalizedValue = gradeValues[value] || 0.6;
+                // 등급 기반 값 (4단계: A-D)
+                const gradeValues = { 'A': 1.0, 'B': 0.85, 'C': 0.65, 'D': 0.45 };
+                normalizedValue = gradeValues[value] || 0.65;
             } else {
                 // 숫자 기반 값 (0-100을 0-1로 정규화)
                 normalizedValue = (value || 0) / 100;
@@ -258,7 +261,7 @@ const PentagonChart = ({ data = {}, analysisDetails, size = 350, showLabels = tr
             ctx.fontWeight = 'bold';
             
             // 평균 등급 계산 (VideoAnalysis와 동일한 방식)
-            const gradeValues = { 'A': 5, 'B': 4, 'C': 3, 'D': 2, 'E': 1, 'F': 0 };
+            const gradeValues = { 'A': 4, 'B': 3, 'C': 2, 'D': 1 };
             
             let totalGradeValue = 0;
             let gradeCount = 0;
@@ -272,10 +275,10 @@ const PentagonChart = ({ data = {}, analysisDetails, size = 350, showLabels = tr
             });
             
             // 등급 평균 계산
-            const averageGradeValue = gradeCount > 0 ? totalGradeValue / gradeCount : 3;
-            const averageGradeText = Object.keys(gradeValues).find(key => 
-                gradeValues[key] === Math.round(averageGradeValue)
-            ) || 'C';
+            const averageGradeValue = gradeCount > 0 ? totalGradeValue / gradeCount : 2;
+            const roundedValue = Math.round(averageGradeValue);
+            const clampedValue = Math.min(4, Math.max(1, roundedValue));
+            const averageGradeText = Object.entries(gradeValues).find(([, value]) => value === clampedValue)?.[0] || 'C';
             
             ctx.fillText(`${averageGradeText}`, centerX, centerY + (isPreview ? 10 : -5));
         }
@@ -360,7 +363,7 @@ const PentagonChart = ({ data = {}, analysisDetails, size = 350, showLabels = tr
                             {Object.entries(analysisDetails).map(([key, item], index, array) => {
                                 // DB에서 가져온 데이터를 그대로 사용 (등급 변환 제거)
                                 const analysisItem = {
-                                    title: key,
+                                    title: labels[key] || key,
                                     score: item.score || 0,
                                     grade: item.grade || 'C', // DB에서 가져온 등급 그대로 사용
                                     description: item.text || '분석 결과가 없습니다.'

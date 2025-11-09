@@ -206,7 +206,6 @@ const ForgotPassword = () => {
       // authService에서 이미 개선된 응답을 반환하므로 다음 단계로 진행
       setStep(2);
     } catch (err) {
-      console.log('Password reset error details:', err);
       // authService에서 대부분의 경우를 성공으로 처리하므로 실제 에러만 표시
       const errorMessage = err.message || '비밀번호 재설정 요청에 실패했습니다.';
       setError(errorMessage);

@@ -52,38 +52,6 @@ const defaultAnalysisData = {
     transcription: '음성 인식 결과가 없습니다.'
 };
 
-// 등급을 점수로 변환하는 함수
-const gradeToScore = (grade) => {
-    if (!grade) return 75;
-    
-    const gradeScores = {
-        'A': 90,
-        'B': 80,
-        'C': 70,
-        'D': 60,
-        'E': 50,
-        'F': 40
-    };
-    
-    return gradeScores[grade] || 75;
-};
-
-// 점수를 등급으로 변환하는 함수
-const calculateGradeFromScore = (score) => {
-    if (typeof score === 'string') return score;
-    
-    if (score >= 90) return 'A';
-    if (score >= 80) return 'B';
-    if (score >= 70) return 'C';
-    if (score >= 60) return 'D';
-    if (score >= 50) return 'E';
-    return 'F';
-};
-
-// 점수 계산 함수
-const calculateScore = (grade) => {
-    return gradeToScore(grade);
-};
 
 const VideoAnalysis = () => {
     const { presentationId } = useParams();
@@ -118,10 +86,6 @@ const VideoAnalysis = () => {
     // 인증 검증 활성화 (토큰 만료 시 로그인으로 리다이렉트)
     useAuthValidation();
 
-    console.log('=== VideoAnalysis 컴포넌트 렌더링 ===');
-    console.log('presentationId:', presentationId);
-    console.log('location.pathname:', location.pathname);
-    console.log('window.location:', window.location.href);
 
     // PentagonChart에서 사용할 라벨 정의
     const labels = {
@@ -164,21 +128,14 @@ const VideoAnalysis = () => {
                 return;
             }
 
-            console.log('=== VideoAnalysis useEffect 실행 ===');
-            console.log('VideoAnalysis 마운트됨, presentationId:', presentationId);
-            console.log('location.state:', location.state);
-            console.log('현재 URL:', window.location.href);
-        
         // React Router state 또는 localStorage에서 데이터 확인
         let stateData = location.state;
         
         if (!stateData) {
-            console.log('React Router state가 없습니다. localStorage 확인 중...');
             try {
                 const savedState = localStorage.getItem('videoAnalysisState');
                 if (savedState) {
                     const parsedState = JSON.parse(savedState);
-                    console.log('localStorage에서 상태 복원:', parsedState);
                     
                     // presentationId가 일치하는지 확인
                     if (parsedState.presentationId === presentationId) {
@@ -188,13 +145,10 @@ const VideoAnalysis = () => {
                         
                         if (ageInMs < oneHour) {
                             stateData = parsedState;
-                            console.log('유효한 localStorage 데이터 사용');
                         } else {
-                            console.log('localStorage 데이터가 오래되어 무시');
                             localStorage.removeItem('videoAnalysisState');
                         }
                     } else {
-                        console.log('localStorage의 presentationId가 일치하지 않음');
                         localStorage.removeItem('videoAnalysisState');
                     }
                 }
@@ -204,12 +158,10 @@ const VideoAnalysis = () => {
             }
         } else {
             // React Router state가 있으면 localStorage는 정리
-            console.log('React Router state 사용, localStorage 정리');
             localStorage.removeItem('videoAnalysisState');
         }
         
         if (stateData) {
-            console.log('페이지 데이터 설정:', stateData);
             setPageData(stateData);
             
             // 비디오 데이터 설정
@@ -219,9 +171,6 @@ const VideoAnalysis = () => {
             
             // forceRefresh 플래그가 있으면 무조건 DB에서 새로 로드
             if (stateData.forceRefresh) {
-                console.log('강제 새로고침 플래그 감지 - DB에서 최신 데이터 로드');
-                console.log('stateData:', stateData);
-                
                 // pageData 설정 (forceRefresh 시에도 데이터 전달)
                 setPageData(stateData);
                 
@@ -243,10 +192,8 @@ const VideoAnalysis = () => {
             
             // 이미 분석 데이터가 있으면 API 호출 없이 사용
             if (stateData.analysisData) {
-                console.log('기존 분석 데이터 사용:', stateData.analysisData);
                 // 기존 데이터가 FastAPI 형식이므로 Spring Boot 형식으로 변환
                 const processedData = convertSpringBootDataToDisplayFormat(stateData.analysisData);
-                console.log('처리된 분석 데이터:', processedData);
                 setAnalysisData(processedData);
                 setLoading(false);
                 return;
@@ -264,19 +211,11 @@ const VideoAnalysis = () => {
         try {
             setLoading(true);
             resetError();
-            
-            console.log('=== DB에서 분석 결과 로드 시작 ===');
-            console.log('presentationId:', presentationId);
-            
+
             // 모든 분석 결과 조회 (캐시 무시)
             const result = await videoAnalysisService.getAllAnalysisResults(presentationId);
             
-            console.log('API 응답:', result);
-            
             if (result.success && result.data) {
-                console.log('=== 분석 결과 로드 성공 ===');
-                console.log('로드된 데이터:', result.data);
-                
                 // 피드백 데이터 설정
                 if (result.data.feedback) {
                     setFeedbackData(result.data.feedback);
@@ -284,16 +223,12 @@ const VideoAnalysis = () => {
                 
                 // VoiceAnalysis 데이터 처리
                 if (result.data.voiceAnalysis) {
-                    console.log('VoiceAnalysis 데이터 발견:', result.data.voiceAnalysis);
-                    console.log('STT 결과:', result.data.sttResult);
                     const convertedData = convertSpringBootDataToDisplayFormat(result.data.voiceAnalysis, result.data.sttResult);
-                    console.log('변환된 데이터:', convertedData);
                     setAnalysisData(convertedData);
                 }
                 
                 // STT 결과 처리
                 if (result.data.sttResult) {
-                    console.log('STT 결과 발견:', result.data.sttResult);
                     // transcription을 transcriptText로 설정
                     if (result.data.sttResult.transcription) {
                         setTranscriptText(result.data.sttResult.transcription);
@@ -304,7 +239,6 @@ const VideoAnalysis = () => {
                     }
                     // STT 결과가 있지만 VoiceAnalysis가 없는 경우, STT 데이터로 기본 분석 데이터 생성
                     if (!result.data.voiceAnalysis) {
-                        console.log('VoiceAnalysis가 없어서 STT 기반 데이터 생성');
                         const sttBasedData = createAnalysisDataFromStt(result.data.sttResult);
                         setAnalysisData(sttBasedData);
                     }
@@ -313,16 +247,10 @@ const VideoAnalysis = () => {
                 // 비디오 데이터 설정 (전달된 pageData 우선 사용)
                 const currentPageData = passedPageData || pageData;
                 if (currentPageData?.presentationData) {
-                    console.log('비디오 데이터 설정:', currentPageData.presentationData);
                     setVideoData(currentPageData.presentationData);
                 } else {
-                    console.log('비디오 데이터가 없습니다. currentPageData:', currentPageData);
                 }
             } else {
-                console.log('=== 분석 결과가 없음 ===');
-                console.log('result.success:', result.success);
-                console.log('result.data:', result.data);
-                console.log('result.error:', result.error);
                 setAnalysisData(createDefaultAnalysisData());
             }
         } catch (error) {
@@ -333,7 +261,6 @@ const VideoAnalysis = () => {
             
             // 404 오류인 경우 프레젠테이션이 삭제된 것으로 간주
             if (error.response && error.response.status === 404) {
-                console.log('프레젠테이션이 삭제되었습니다. 대시보드로 이동합니다.');
                 navigate('/dashboard', { replace: true });
                 return;
             }
@@ -348,9 +275,6 @@ const VideoAnalysis = () => {
         if (!voiceAnalysisData) {
             return createDefaultAnalysisData();
         }
-
-        console.log('VoiceAnalysis 데이터 변환:', voiceAnalysisData);
-        console.log('STT 결과:', sttResult);
 
         // 점수 계산
         const scores = {
@@ -376,7 +300,7 @@ const VideoAnalysis = () => {
             expression: {
                 grade: voiceAnalysisData.anxietyGrade || 'C',
                 score: scores.expression,
-                text: ''
+                text: voiceAnalysisData.anxietyComment || '불안 분석 결과가 없습니다.'
             },
             pitch: {
                 grade: voiceAnalysisData.pitchGrade || 'C',
@@ -411,8 +335,6 @@ const VideoAnalysis = () => {
     };
 
     const createAnalysisDataFromStt = (sttResult) => {
-        console.log('STT 데이터로부터 분석 데이터 생성:', sttResult);
-        
         // 기본 점수 설정
         const scores = {
             voice: 'C',
@@ -498,28 +420,10 @@ const VideoAnalysis = () => {
             '나쁨': 'D',
             '매우 나쁨': 'F'
         };
-        
-<<<<<<< HEAD
-        return koreanToEnglish[data.expressionGrade] || data.expressionGrade;
-    };
 
-=======
         return koreanToEnglish[data.anxietyGrade] || data.anxietyGrade;
     };
 
-    const calculatePronunciationScore = (data) => {
-        if (!data || !data.pronunciationScore) return 'C';
-        // 발음 점수는 0-1 범위이므로 A-E 등급으로 변환
-        const score = data.pronunciationScore;
-        if (score >= 0.85) return 'A';
-        if (score >= 0.75) return 'B';
-        if (score >= 0.65) return 'C';
-        if (score >= 0.55) return 'D';
-        return 'E';
-    };
-
-
->>>>>>> 53c6f4476337874e32b7de6ff760019c53b9b272
     // 기본 분석 데이터 생성
     const createDefaultAnalysisData = () => {
         return {
@@ -569,9 +473,7 @@ const VideoAnalysis = () => {
                 'A': '#4CAF50', // 녹색
                 'B': '#8BC34A', // 연한 녹색
                 'C': '#FF9800', // 주황색
-                'D': '#FF5722', // 진한 주황색
-                'E': '#F44336', // 빨간색
-                'F': '#D32F2F'  // 진한 빨간색
+        'D': '#FF5722'  // 진한 주황색
             };
             return gradeColors[grade] || '#FF9800';
         } else {
@@ -581,30 +483,6 @@ const VideoAnalysis = () => {
             return '#F44336';
         }
     };
-
-    const getScoreText = (grade) => {
-        if (typeof grade === 'string') {
-            // 등급 기반 텍스트
-            const gradeTexts = {
-                'A': '우수',
-                'B': '양호',
-                'C': '보통',
-                'D': '미흡',
-                'E': '부족',
-                'F': '매우 부족'
-            };
-            return gradeTexts[grade] || '보통';
-        } else {
-            // 숫자 점수 기반 텍스트 (기존 호환성)
-            if (grade >= 80) return '우수';
-            if (grade >= 60) return '보통';
-        return '개선 필요';
-        }
-    };
-
-
-    
-
     
     const renderFeedbackTab = () => {
         if (!feedbackData) {
@@ -844,21 +722,6 @@ const VideoAnalysis = () => {
         );
     };
 
-    // 대본 관련 함수들
-    const handleSaveTranscript = () => {
-        // 대본 저장 로직 (필요시 구현)
-        console.log('대본 저장됨');
-    };
-
-    const handleEditTranscript = () => {
-        // 대본 편집 모드 활성화
-        console.log('대본 편집 모드');
-    };
-
-    const handleBackToAnalysis = () => {
-        setCurrentView('analysis');
-    };
-    
     const renderTranscriptTab = () => {
         return (
             <div style={{
@@ -1008,9 +871,6 @@ const VideoAnalysis = () => {
     }
 
     const finalAnalysisData = analysisData || createDefaultAnalysisData();
-    console.log('finalAnalysisData:', finalAnalysisData);
-    console.log('transcription:', finalAnalysisData.transcription);
-
     // scores가 없을 경우를 대비한 안전장치
     const scores = finalAnalysisData?.scores || {
         voice: 'C',
@@ -1023,12 +883,12 @@ const VideoAnalysis = () => {
 
     // 평균 점수 계산을 위한 안전장치
     const averageScore = (() => {
-        const gradeValues = { 'A': 5, 'B': 4, 'C': 3, 'D': 2, 'E': 1, 'F': 0 };
+        const gradeValues = { 'A': 4, 'B': 3, 'C': 2, 'D': 1 };
         
         let totalGradeValue = 0;
         let gradeCount = 0;
         
-        Object.entries(scores).forEach(([key, value]) => {
+        Object.values(scores).forEach((value) => {
             if (typeof value === 'string' && gradeValues[value] !== undefined) {
                 totalGradeValue += gradeValues[value];
                 gradeCount++;
@@ -1036,10 +896,10 @@ const VideoAnalysis = () => {
         });
         
         // 등급 평균 계산
-        const averageGradeValue = gradeCount > 0 ? totalGradeValue / gradeCount : 3;
-        const averageGrade = Object.keys(gradeValues).find(key => 
-            gradeValues[key] === Math.round(averageGradeValue)
-        ) || 'C';
+        const averageGradeValue = gradeCount > 0 ? totalGradeValue / gradeCount : 2;
+        const roundedValue = Math.round(averageGradeValue);
+        const clampedValue = Math.min(4, Math.max(1, roundedValue));
+        const averageGrade = Object.entries(gradeValues).find(([, value]) => value === clampedValue)?.[0] || 'C';
         
         return { grade: averageGrade };
     })();
@@ -1204,7 +1064,6 @@ const VideoAnalysis = () => {
                                     color: '#000000',
                                     marginBottom: '4px'
                                 }}>
-                                    {getScoreText(averageScore.grade)}
                                 </div>
                                 <div style={{
                                     fontSize: '14px',

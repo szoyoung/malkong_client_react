@@ -72,7 +72,6 @@ const AnalysisProgress = () => {
                 }
             } else if (response.status === 404) {
                 // 프레젠테이션이 삭제된 경우 대시보드로 이동
-                console.log('프레젠테이션이 삭제되었습니다. 대시보드로 이동합니다.');
                 navigate('/dashboard', { replace: true });
                 return;
             } else {
@@ -110,10 +109,6 @@ const AnalysisProgress = () => {
         };
         
         try {
-            console.log('최신 분석 결과 로드 시작...');
-            console.log('presentationData:', presentationData);
-            console.log('topicData:', topicData);
-            
             // 잠시 대기 후 DB에서 최신 분석 결과 조회 (DB 업데이트 시간 고려)
             await new Promise(resolve => setTimeout(resolve, 2000));
             
@@ -121,8 +116,6 @@ const AnalysisProgress = () => {
             const result = await videoAnalysisService.getAllAnalysisResults(presentationId);
             
             if (result.success && result.data) {
-                console.log('최신 분석 결과 로드 성공:', result.data);
-                
                 // 분석 페이지로 이동하면서 최신 데이터 전달
                 navigate(`/video-analysis/${presentationId}`, {
                     state: {

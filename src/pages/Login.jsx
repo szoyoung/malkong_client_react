@@ -328,14 +328,11 @@ const Login = () => {
               name: payload.name || email.split('@')[0],
               provider: 'LOCAL'
             };
-            
             // Set user info directly without API call
             dispatch(setUser(userData));
-            
-            console.log('일반 로그인 성공, 사용자 정보 설정 완료:', userData);
           } else {
             // Google OAuth 토큰인 경우에만 fetchUserInfo 호출 (하지만 일반 로그인에서는 발생하지 않음)
-            console.log('Unexpected: Google OAuth token in regular login');
+            await dispatch(fetchUserInfo());
           }
         } catch (tokenError) {
           console.error('Token parsing error:', tokenError);
@@ -347,8 +344,6 @@ const Login = () => {
           };
           
           dispatch(setUser(userData));
-          
-          console.log('토큰 파싱 실패, 기본 사용자 정보 설정:', userData);
         }
       } else {
         console.error('No token received from login');

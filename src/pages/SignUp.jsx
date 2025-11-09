@@ -233,7 +233,6 @@ const SignUp = () => {
       // authService에서 이미 개선된 응답을 반환하므로 메시지 사용
       alert(result.message || '인증 코드가 이메일로 전송되었습니다.');
     } catch (error) {
-      console.log('Error details:', error);
       // authService에서 대부분의 경우를 성공으로 처리하므로 실제 에러만 표시
       const errorMessage = error.message || '인증 코드 전송에 실패했습니다.';
       setError(errorMessage);

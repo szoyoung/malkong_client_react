@@ -107,8 +107,6 @@ const Dashboard = () => {
                 const audioTracks = result.stream.getAudioTracks();
                 if (audioTracks.length === 0) {
                     setError('마이크가 감지되지 않았습니다. 오디오 없이 녹화됩니다.');
-                } else {
-                    console.log('오디오 녹화 준비 완료');
                 }
                 
                 // 성능 최적화된 타이머 (부드러운 업데이트)
@@ -203,14 +201,6 @@ const Dashboard = () => {
                 console.error('발표 개수 확인 실패:', err);
             }
 
-            // 디버깅 정보 출력
-            console.log('=== 프레젠테이션 생성 디버깅 정보 ===');
-            console.log('현재 사용자:', user);
-            console.log('현재 토픽:', currentTopic);
-            console.log('토픽이 팀 토픽인가?', currentTopic.isTeamTopic);
-            console.log('토픽의 팀 ID:', currentTopic.teamId);
-            console.log('파일 업로드:', uploadData);
-            
             // uploadData가 객체인지 파일인지 확인
             let file, presentationInfo;
             
@@ -260,9 +250,6 @@ const Dashboard = () => {
 
     // 비디오 분석 완료 핸들러
     const handleAnalysisComplete = (data) => {
-        console.log('=== Dashboard: handleAnalysisComplete 호출됨 ===');
-        console.log('Dashboard: 분석 완료 데이터:', data);
-        
         const { presentationId, presentationData, analysisData, analysisError } = data;
         
         if (!presentationId) {
@@ -283,7 +270,6 @@ const Dashboard = () => {
         
         try {
             localStorage.setItem('videoAnalysisState', JSON.stringify(stateData));
-            console.log('Dashboard: 상태 데이터를 localStorage에 저장:', stateData);
             
             // URL에 presentationId를 포함하여 이동
             navigate(`/video-analysis/${presentationId}`, {
@@ -321,7 +307,6 @@ const Dashboard = () => {
     };
 
     const handleTopicCreated = async (newTopic) => {
-        console.log('새 토픽 생성 완료:', newTopic);
         dispatch(addTopic(newTopic));
         dispatch(setCurrentTopic(newTopic));
         setShowTopicCreator(false);

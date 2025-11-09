@@ -87,25 +87,18 @@ const TeamManagement = () => {
 
   // URL 파라미터에서 teamId가 있으면 해당 팀의 상세 페이지로 이동
   useEffect(() => {
-    console.log('URL 파라미터 teamId:', teamId);
-    console.log('현재 teams:', teams);
-    
     if (teamId && teams.length > 0) {
       // teamId를 숫자로 변환 시도
       const numericTeamId = parseInt(teamId);
-      console.log('변환된 teamId:', numericTeamId);
       
       // 숫자 ID와 문자열 ID 모두 확인
       const team = teams.find(t => t.id === numericTeamId || t.id === teamId);
-      console.log('찾은 팀:', team);
       
       if (team) {
         setSelectedTeam(team);
         setView('detail');
-        console.log('팀 상세 페이지로 이동:', team.name);
       } else {
         // 팀을 찾을 수 없으면 대시보드로 이동
-        console.log('팀을 찾을 수 없음, 대시보드로 이동');
         navigate('/teams', { replace: true });
       }
     }

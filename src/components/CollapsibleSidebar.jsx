@@ -242,19 +242,19 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
 
     const calculateVoiceScore = (data) => {
         if (!data.intensityGrade) return 75;
-        const gradeMap = { 'A': 90, 'B': 80, 'C': 70, 'D': 60, 'E': 50, 'F': 40 };
+        const gradeMap = { 'A': 90, 'B': 80, 'C': 70, 'D': 60 };
         return gradeMap[data.intensityGrade] || 75;
     };
 
     const calculateSpeedScore = (data) => {
         if (!data.wpmGrade) return 75;
-        const gradeMap = { 'A': 90, 'B': 80, 'C': 70, 'D': 60, 'E': 50, 'F': 40 };
+        const gradeMap = { 'A': 90, 'B': 80, 'C': 70, 'D': 60 };
         return gradeMap[data.wpmGrade] || 75;
     };
 
     const calculatePitchScore = (data) => {
         if (!data.pitchGrade) return 75;
-        const gradeMap = { 'A': 90, 'B': 80, 'C': 70, 'D': 60, 'E': 50, 'F': 40 };
+        const gradeMap = { 'A': 90, 'B': 80, 'C': 70, 'D': 60 };
         return gradeMap[data.pitchGrade] || 75;
     };
 
@@ -262,7 +262,7 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
         if (!data.anxietyGrade) return 75;
         
         // DB에서 가져온 등급을 그대로 사용하여 점수 변환
-        const gradeMap = { 'A': 90, 'B': 80, 'C': 70, 'D': 60, 'E': 50, 'F': 40 };
+        const gradeMap = { 'A': 90, 'B': 80, 'C': 70, 'D': 60 };
         return gradeMap[data.anxietyGrade] || 75;
     };
 

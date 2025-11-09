@@ -9,48 +9,13 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
     const data = hasData ? (comparisonData.comparisonData || comparisonData) : null;
     const metrics1 = data?.presentation1 || {};
     const metrics2 = data?.presentation2 || {};
-    
-    console.log('=== ComparisonChart 데이터 확인 ===');
-    console.log('comparisonData:', comparisonData);
-    console.log('comparisonData 타입:', typeof comparisonData);
-    console.log('comparisonData 키들:', comparisonData ? Object.keys(comparisonData) : 'null');
-    console.log('hasData:', hasData);
-    console.log('data:', data);
-    console.log('metrics1:', metrics1);
-    console.log('metrics2:', metrics2);
-    console.log('발음 점수1:', metrics1.pronunciationScore);
-    console.log('발음 점수2:', metrics2.pronunciationScore);
-    console.log('AI 분석 결과 확인:');
-    console.log('- improvements_made:', comparisonData?.improvements_made);
-    console.log('- areas_to_improve:', comparisonData?.areas_to_improve);
-    console.log('- overall_feedback:', comparisonData?.overall_feedback);
-    console.log('- strengths_comparison:', comparisonData?.strengths_comparison);
-    console.log('- strengthsComparison:', comparisonData?.strengthsComparison);
-    console.log('- improvement_suggestions:', comparisonData?.improvement_suggestions);
-    console.log('- improvementSuggestions:', comparisonData?.improvementSuggestions);
-    console.log('- overallFeedback:', comparisonData?.overallFeedback);
-    
-    // comparisonSummary 필드 확인
-    console.log('- comparisonSummary:', comparisonData?.comparisonSummary);
-    if (comparisonData?.comparisonSummary) {
-        try {
-            const parsedSummary = JSON.parse(comparisonData.comparisonSummary);
-            console.log('- parsed comparisonSummary:', parsedSummary);
-            console.log('- parsed improvements_made:', parsedSummary?.improvements_made);
-            console.log('- parsed areas_to_improve:', parsedSummary?.areas_to_improve);
-            console.log('- parsed overall_feedback:', parsedSummary?.overall_feedback);
-        } catch (e) {
-            console.log('- comparisonSummary 파싱 실패:', e);
-        }
-    }
-    
     // comparisonSummary에서 AI 분석 결과 파싱
     let aiAnalysisData = {};
     if (comparisonData?.comparisonSummary) {
         try {
             aiAnalysisData = JSON.parse(comparisonData.comparisonSummary);
         } catch (e) {
-            console.log('comparisonSummary 파싱 실패:', e);
+            aiAnalysisData = {};
         }
     }
     
@@ -61,35 +26,11 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
     const gradeToScore = (grade) => {
         const gradeMap = { 
             'A': 90, 
-            'B': 75, 
-            'C': 60, 
-            'D': 45, 
-            'E': 30,
-            // 백엔드가 한글 등급을 보낼 수도 있음
-            '매우 좋음': 90,
-            '좋음': 75,
-            '보통': 60,
-            '나쁨': 45,
-            '매우 나쁨': 30
+            'B': 80, 
+            'C': 70, 
+            'D': 60,
         };
         return gradeMap[grade] || 60;
-    };
-
-    // 발음 점수 기반 등급 계산 (백엔드 등급 누락 시 대비)
-    const fallbackPronunciationGrade = (score) => {
-        if (score === null || score === undefined) {
-            return 'C';
-        }
-        const numScore = parseFloat(score);
-        if (Number.isNaN(numScore)) {
-            return 'C';
-        }
-
-        if (numScore >= 0.8) return 'A';
-        if (numScore >= 0.6) return 'B';
-        if (numScore >= 0.4) return 'C';
-        if (numScore >= 0.2) return 'D';
-        return 'E';
     };
 
     const formatPercent = (value) => {
@@ -130,7 +71,6 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
         try {
             return JSON.parse(emotionAnalysisJson);
         } catch (e) {
-            console.log('감정 분석 데이터 파싱 실패:', e);
             return null;
         }
     };
@@ -158,7 +98,7 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
             speed: metrics.wpmGrade || 'C',
             expression: metrics.anxietyGrade || 'C',
             pitch: metrics.pitchGrade || 'C',
-            clarity: metrics.pronunciationGrade || fallbackPronunciationGrade(metrics.pronunciationScore)
+            clarity: metrics.pronunciationGrade || 'C'
         };
     };
 
@@ -180,16 +120,15 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
     const pentData2 = convertToPentagonData(grades2);
 
     // 평균 등급 계산 (useEffect보다 먼저 선언)
-    const gradeValues = { 'A': 5, 'B': 4, 'C': 3, 'D': 2, 'E': 1 };
-    const avg1 = Object.values(grades1).reduce((sum, g) => sum + gradeValues[g], 0) / 5;
-    const avg2 = Object.values(grades2).reduce((sum, g) => sum + gradeValues[g], 0) / 5;
+    const gradeValues = { 'A': 4, 'B': 3, 'C': 2, 'D': 1 };
+    const avg1 = Object.values(grades1).reduce((sum, g) => sum + (gradeValues[g] || 0), 0) / 5;
+    const avg2 = Object.values(grades2).reduce((sum, g) => sum + (gradeValues[g] || 0), 0) / 5;
     
     const getAvgGrade = (avg) => {
-        if (avg >= 4.5) return 'A';
-        if (avg >= 3.5) return 'B';
-        if (avg >= 2.5) return 'C';
-        if (avg >= 1.5) return 'D';
-        return 'E';
+        if (avg >= 3.5) return 'A';
+        if (avg >= 2.5) return 'B';
+        if (avg >= 1.5) return 'C';
+        return 'D';
     };
 
     const avgGrade1 = getAvgGrade(avg1);
@@ -200,9 +139,7 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
             'A': '#4caf50',
             'B': '#8bc34a',
             'C': '#ffc107',
-            'D': '#ff9800',
-            'E': '#f44336',
-            'F': '#d32f2f'
+            'D': '#ff9800'
         };
         return colors[grade] || '#9e9e9e';
     };
@@ -504,11 +441,6 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
                                 grade={grades1.speed}
                             />
                             <MetricItemWithGrade 
-                                label="불안" 
-                                value={formatEmotionAnalysis(parseEmotionAnalysis(metrics1.emotionAnalysis))}
-                                grade={grades1.expression}
-                            />
-                            <MetricItemWithGrade 
                                 label="피치" 
                                 value={`${(metrics1.pitchAvg || 0).toFixed(1)}Hz`}
                                 grade={grades1.pitch}
@@ -542,11 +474,6 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
                                 label="말하기 속도" 
                                 value={`${(metrics2.wpmAvg || 0).toFixed(1)}WPM`}
                                 grade={grades2.speed}
-                            />
-                            <MetricItemWithGrade 
-                                label="불안" 
-                                value={formatEmotionAnalysis(parseEmotionAnalysis(metrics2.emotionAnalysis))}
-                                grade={grades2.expression}
                             />
                             <MetricItemWithGrade 
                                 label="피치" 
@@ -672,8 +599,6 @@ const MetricItemWithGrade = ({ label, value, grade }) => {
             'B': '#8bc34a',
             'C': '#ffc107',
             'D': '#ff9800',
-            'E': '#f44336',
-            'F': '#d32f2f',
             'N/A': '#9e9e9e'
         };
         return colors[inputGrade] || '#9e9e9e';

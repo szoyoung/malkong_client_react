@@ -17,11 +17,9 @@ import {
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import topicService from '../api/topicService';
-import api from '../api/axios';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchUserInfo } from '../store/slices/authSlice';
-import { setTopics, addTopic } from '../store/slices/topicSlice';
-import { store } from '../store/store';
+import { addTopic } from '../store/slices/topicSlice';
 
 const TopicCreator = ({ open, onClose, onTopicCreated, isTeamTopic = false, team = null }) => {
     const [title, setTitle] = useState('');
@@ -35,15 +33,7 @@ const TopicCreator = ({ open, onClose, onTopicCreated, isTeamTopic = false, team
 
     // 컴포넌트가 열릴 때 사용자 정보 확인
     useEffect(() => {
-        console.log('=== TopicCreator useEffect 실행 ===');
-        console.log('open:', open);
-        console.log('isTeamTopic:', isTeamTopic);
-        console.log('team:', team);
-        console.log('user:', user);
-        console.log('teams:', teams);
-        
         if (open && (!user || !user.userId)) {
-            console.log('사용자 정보 없음, 다시 로드 시도:', user);
             dispatch(fetchUserInfo()).catch(error => {
                 console.error('사용자 정보 로드 실패:', error);
                 setError('사용자 정보를 불러올 수 없습니다. 다시 로그인해주세요.');
@@ -52,19 +42,14 @@ const TopicCreator = ({ open, onClose, onTopicCreated, isTeamTopic = false, team
         
         // 팀 토픽 생성 시 team 정보 확인
         if (open && isTeamTopic) {
-            console.log('팀 토픽 생성 다이얼로그 열림 - team:', team);
-            console.log('isTeamTopic:', isTeamTopic);
-            
             // team이 전달되었으면 selectedTeamId 설정
             if (team && team.id) {
-                console.log('팀 ID 설정:', team.id);
                 setSelectedTeamId(team.id);
             } else if (teams.length > 0) {
-                console.log('첫 번째 팀을 기본값으로 설정:', teams[0].id);
                 // team이 없으면 첫 번째 팀을 기본값으로 설정
                 setSelectedTeamId(teams[0].id);
             } else {
-                console.warn('팀 정보가 없습니다!');
+                setError('팀 정보를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.');
             }
         }
     }, [open, user, dispatch, isTeamTopic, team, teams]);
@@ -76,8 +61,6 @@ const TopicCreator = ({ open, onClose, onTopicCreated, isTeamTopic = false, team
             setError('토픽 제목을 입력해주세요.');
             return;
         }
-
-        console.log('현재 사용자 정보:', user);
 
         if (!user || !user.userId) {
             setError('사용자 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
@@ -121,13 +104,6 @@ const TopicCreator = ({ open, onClose, onTopicCreated, isTeamTopic = false, team
         setError('');
 
         try {
-            console.log('토픽 생성 시도:', { 
-                title: title.trim(), 
-                userIdentifier: userIdentifier,
-                userInfo: user,
-                provider: user.provider
-            });
-            
             let result;
             
             if (isTeamTopic) {
@@ -141,9 +117,6 @@ const TopicCreator = ({ open, onClose, onTopicCreated, isTeamTopic = false, team
                     setError('선택된 팀을 찾을 수 없습니다.');
                     return;
                 }
-                
-                console.log('팀 토픽 생성 - 선택된 팀:', selectedTeam);
-                console.log('팀 ID:', selectedTeam.id);
                 
                 // 팀 토픽 생성 - topicService 사용
                 result = await topicService.createTopic(title.trim(), userIdentifier, true, selectedTeam.id);
@@ -164,7 +137,6 @@ const TopicCreator = ({ open, onClose, onTopicCreated, isTeamTopic = false, team
                             if (existingIndex === -1) {
                                 localTopics.push(teamTopic);
                                 localStorage.setItem('ddorang_topics', JSON.stringify(localTopics));
-                                console.log('팀 토픽이 로컬 스토리지에 백업 저장됨:', teamTopic);
                             }
                         } catch (storageError) {
                             console.error('로컬 스토리지 백업 저장 실패:', storageError);
@@ -179,15 +151,7 @@ const TopicCreator = ({ open, onClose, onTopicCreated, isTeamTopic = false, team
                         name: title.trim()
                     };
                     
-                    console.log('팀 토픽 Redux store에 추가:', teamTopic);
                     dispatch(addTopic(teamTopic));
-                    
-                    // Redux store 상태 확인
-                    setTimeout(() => {
-                        console.log('팀 토픽 추가 후 Redux store 상태 확인');
-                        const currentState = store.getState();
-                        console.log('현재 topics 상태:', currentState.topic.topics);
-                    }, 100);
                 }
             } else {
                 // 일반 토픽 생성
@@ -195,16 +159,6 @@ const TopicCreator = ({ open, onClose, onTopicCreated, isTeamTopic = false, team
             }
             
             if (result.success) {
-                // 로컬 생성인 경우 사용자에게 알림
-                if (result.isLocal) {
-                    console.log('로컬에 토픽 생성됨:', result.data);
-                    // 토픽 목록은 로컬 데이터로 업데이트하지 않음 (이미 저장됨)
-                } else {
-                    // 서버 생성 성공 시에도 addTopic을 사용하여 올바른 위치에 추가
-                    // (setTopics는 전체 목록을 새로고침하므로 순서가 변경될 수 있음)
-                    console.log('서버에서 팀 토픽 생성 성공, addTopic으로 추가');
-                }
-                
                 onTopicCreated && onTopicCreated(result.data);
                 onClose();
                 setTitle('');
