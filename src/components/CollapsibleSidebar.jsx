@@ -265,8 +265,17 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
     };
 
     const calculateClarityScore = (data) => {
-        if (!data.pronunciationScore) return 75;
+        if (data.pronunciationScore === null || data.pronunciationScore === undefined) return 75;
         return Math.round(data.pronunciationScore * 100);
+    };
+
+    const derivePronunciationGrade = (score) => {
+        if (score === null || score === undefined) return 'C';
+        if (score >= 0.85) return 'A';
+        if (score >= 0.75) return 'B';
+        if (score >= 0.65) return 'C';
+        if (score >= 0.55) return 'D';
+        return 'E';
     };
 
     // Spring Boot 데이터를 표시 형식으로 변환
@@ -276,6 +285,13 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
         }
 
         // Spring Boot 응답 데이터 변환
+        const pronunciationScore = data.sttResult?.pronunciationScore ?? null;
+        const pronunciationGrade = data.sttResult?.pronunciationGrade || null;
+        const pronunciationComment = data.sttResult?.pronunciationComment || null;
+        const anxietyGrade = data.voiceAnalysis?.anxietyGrade || null;
+        const anxietyRatio = data.voiceAnalysis?.anxietyRatio ?? null;
+        const anxietyComment = data.voiceAnalysis?.anxietyComment || null;
+
         const fastApiData = {
             intensityGrade: data.voiceAnalysis?.intensityGrade || '보통',
             intensityDb: data.voiceAnalysis?.intensityDb,
@@ -289,7 +305,12 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
             expressionGrade: data.voiceAnalysis?.expressionGrade || '보통',
             expressionText: data.voiceAnalysis?.expressionText || '표정이 자연스럽습니다.',
             transcription: data.sttResult?.transcription || '',
-            pronunciationScore: data.sttResult?.pronunciationScore || 0.75
+            pronunciationScore,
+            pronunciationGrade,
+            pronunciationComment,
+            anxietyGrade,
+            anxietyRatio,
+            anxietyComment
         };
 
         // 등급 데이터 (PentagonChart에서 사용)
@@ -298,11 +319,7 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
             speed: fastApiData.wpmGrade,
             expression: fastApiData.expressionGrade,
             pitch: fastApiData.pitchGrade,
-            clarity: fastApiData.pronunciationScore ? 
-                (fastApiData.pronunciationScore >= 0.8 ? 'A' :
-                 fastApiData.pronunciationScore >= 0.6 ? 'B' :
-                 fastApiData.pronunciationScore >= 0.4 ? 'C' :
-                 fastApiData.pronunciationScore >= 0.2 ? 'D' : 'E') : 'C'
+            clarity: fastApiData.pronunciationGrade || derivePronunciationGrade(fastApiData.pronunciationScore)
         };
 
         // 점수 계산 (기존 호환성 유지)
@@ -1089,7 +1106,11 @@ const CollapsibleSidebar = ({ isCollapsed, refreshKey }) => {
                                                         overflow: 'hidden'
                                                     }}>
                                                         <video 
-                                                            src={presentation.videoUrl}
+                                                            src={presentation.videoUrl 
+                                                                ? (presentation.videoUrl.startsWith('http') 
+                                                                    ? presentation.videoUrl 
+                                                                    : `${window.location.origin.includes('localhost') ? 'http://localhost:8080' : window.location.origin.replace(/:\d+$/, ':8080')}${presentation.videoUrl}`)
+                                                                : undefined}
                                                             style={{
                                                                 width: '100%',
                                                                 height: '100%',

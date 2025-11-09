@@ -358,10 +358,28 @@ const topicService = {
             const formData = new FormData();
             
             // 프레젠테이션 메타데이터 추가
+            const goalTimeValue = presentationData.goalTime;
+            let normalizedGoalTime = null;
+
+            if (goalTimeValue !== undefined && goalTimeValue !== null && goalTimeValue !== '') {
+                if (typeof goalTimeValue === 'number' && !Number.isNaN(goalTimeValue)) {
+                    normalizedGoalTime = goalTimeValue;
+                } else if (typeof goalTimeValue === 'string') {
+                    const directNumber = Number(goalTimeValue);
+                    if (!Number.isNaN(directNumber)) {
+                        normalizedGoalTime = directNumber;
+                    } else {
+                        const parsedInt = parseInt(goalTimeValue, 10);
+                        if (!Number.isNaN(parsedInt)) {
+                            normalizedGoalTime = parsedInt;
+                        }
+                    }
+                }
+            }
             const metadata = {
                 title: presentationData.title || '새 프레젠테이션',
                 script: presentationData.script || '',
-                goalTime: presentationData.goalTime || '',
+                goalTime: normalizedGoalTime,
                 type: presentationData.type || 'recording',
                 originalFileName: videoFile ? videoFile.name : '',
                 duration: presentationData.duration || 0

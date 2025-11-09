@@ -358,7 +358,7 @@ const VideoAnalysis = () => {
             speed: calculateSpeedScore(voiceAnalysisData) || 'C',
             expression: calculateExpressionScore(voiceAnalysisData) || 'C',
             pitch: calculatePitchScore(voiceAnalysisData) || 'C',
-            clarity: sttResult?.pronunciationScore ? calculatePronunciationScore(sttResult) : 'C'
+            clarity: sttResult?.pronunciationGrade || 'C'
         };
 
         // 상세 분석 정보
@@ -384,11 +384,20 @@ const VideoAnalysis = () => {
                 text: voiceAnalysisData.pitchText || '피치 변화가 자연스럽습니다.'
             },
             clarity: {
-                grade: scores.clarity,
-                score: scores.clarity,
-                text: sttResult?.pronunciationScore ? 
-                    `발음 정확도: ${(sttResult.pronunciationScore * 100).toFixed(1)}%` : 
-                    '발음 정확도 분석 기능은 현재 개발 중입니다.'
+                grade: sttResult?.pronunciationGrade || 'C',
+                score: sttResult?.pronunciationGrade || 'C',
+                text: (() => {
+                    if (sttResult?.pronunciationComment) {
+                        const percentText = sttResult.pronunciationScore !== null && sttResult.pronunciationScore !== undefined
+                            ? ` (${(sttResult.pronunciationScore * 100).toFixed(1)}%)`
+                            : '';
+                        return `${sttResult.pronunciationComment}${percentText}`;
+                    }
+                    if (sttResult?.pronunciationScore !== null && sttResult?.pronunciationScore !== undefined) {
+                        return `발음 정확도: ${(sttResult.pronunciationScore * 100).toFixed(1)}%`;
+                    }
+                    return '발음 정확도 분석 기능은 현재 개발 중입니다.';
+                })()
             }
         };
 
@@ -410,7 +419,7 @@ const VideoAnalysis = () => {
             speed: 'C',
             expression: 'C',
             pitch: 'C',
-            clarity: sttResult.pronunciationScore ? calculatePronunciationScore(sttResult) : 'C'
+            clarity: sttResult.pronunciationGrade || 'C'
         };
 
         // 상세 분석 정보
@@ -436,11 +445,20 @@ const VideoAnalysis = () => {
                     text: '피치 분석이 완료되지 않았습니다.',
                 },
                 clarity: {
-                grade: scores.clarity,
-                score: scores.clarity,
-                text: sttResult.pronunciationScore ? 
-                    `발음 정확도: ${(sttResult.pronunciationScore * 100).toFixed(1)}%` : 
-                    '발음 정확도 분석이 완료되지 않았습니다.',
+                grade: sttResult.pronunciationGrade || 'C',
+                score: sttResult.pronunciationGrade || 'C',
+                text: (() => {
+                    if (sttResult.pronunciationComment) {
+                        const percentText = sttResult.pronunciationScore !== null && sttResult.pronunciationScore !== undefined
+                            ? ` (${(sttResult.pronunciationScore * 100).toFixed(1)}%)`
+                            : '';
+                        return `${sttResult.pronunciationComment}${percentText}`;
+                    }
+                    if (sttResult.pronunciationScore !== null && sttResult.pronunciationScore !== undefined) {
+                        return `발음 정확도: ${(sttResult.pronunciationScore * 100).toFixed(1)}%`;
+                    }
+                    return '발음 정확도 분석이 완료되지 않았습니다.';
+                })(),
             }
         };
 
@@ -483,23 +501,6 @@ const VideoAnalysis = () => {
         
         return koreanToEnglish[data.expressionGrade] || data.expressionGrade;
     };
-
-    const calculateClarityScore = (data) => {
-        // 명확도 분석은 아직 구현되지 않음
-        return 'C';
-    };
-
-    const calculatePronunciationScore = (data) => {
-        if (!data || !data.pronunciationScore) return 'C';
-        // 발음 점수는 0-1 범위이므로 A-E 등급으로 변환
-        const score = data.pronunciationScore;
-        if (score >= 0.85) return 'A';
-        if (score >= 0.75) return 'B';
-        if (score >= 0.65) return 'C';
-        if (score >= 0.55) return 'D';
-        return 'E';
-    };
-
 
     // 기본 분석 데이터 생성
     const createDefaultAnalysisData = () => {
@@ -1112,7 +1113,11 @@ const VideoAnalysis = () => {
                                 <video
                                     ref={mainVideoRef}
                                     controls
-                                    src={videoData.videoUrl || videoData.url}
+                                    src={(videoData.videoUrl || videoData.url) 
+                                        ? ((videoData.videoUrl || videoData.url).startsWith('http') 
+                                            ? (videoData.videoUrl || videoData.url)
+                                            : `${window.location.origin.includes('localhost') ? 'http://localhost:8080' : window.location.origin.replace(/:\d+$/, ':8080')}${videoData.videoUrl || videoData.url}`)
+                                        : undefined}
                                     style={{
                                         width: '100%',
                                         height: '100%',

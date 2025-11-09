@@ -18,6 +18,7 @@ import {
     VolumeUp as VolumeUpIcon,
     Fullscreen as FullscreenIcon
 } from '@mui/icons-material';
+import { getVideoUrl } from '../utils/videoUrlUtils';
 
 const VideoPlayer = ({ presentation, open, onClose, onTimeUpdate }) => {
     const videoRef = useRef(null);
@@ -103,11 +104,6 @@ const VideoPlayer = ({ presentation, open, onClose, onTimeUpdate }) => {
         return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     };
 
-    const getVideoUrl = (url) => {
-        if (!url) return '';
-        if (url.startsWith('http')) return url;
-        return `http://localhost:8080${url}`;
-    };
 
     if (!presentation) return null;
 

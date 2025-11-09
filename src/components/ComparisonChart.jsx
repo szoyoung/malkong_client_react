@@ -75,27 +75,51 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
         return gradeMap[grade] || 60;
     };
 
-    // 발음 점수를 등급으로 변환
-    const convertPronunciationToGrade = (score) => {
-        console.log('발음 점수 변환:', score, typeof score);
-        // null 또는 undefined 체크 (0도 유효한 값으로 처리)
+    // 발음 점수 기반 등급 계산 (백엔드 등급 누락 시 대비)
+    const fallbackPronunciationGrade = (score) => {
         if (score === null || score === undefined) {
-            console.log('발음 점수 없음 (null/undefined), C 반환');
             return 'C';
         }
-        // 0-1 범위의 숫자로 변환
         const numScore = parseFloat(score);
-        if (isNaN(numScore)) {
-            console.log('발음 점수가 숫자가 아님, C 반환');
+        if (Number.isNaN(numScore)) {
             return 'C';
         }
-        
-        console.log('발음 점수 숫자 변환:', numScore);
+
         if (numScore >= 0.8) return 'A';
         if (numScore >= 0.6) return 'B';
         if (numScore >= 0.4) return 'C';
         if (numScore >= 0.2) return 'D';
         return 'E';
+    };
+
+    const formatPercent = (value) => {
+        if (value === null || value === undefined) return null;
+        const percent = Number(value) * 100;
+        if (Number.isNaN(percent)) return null;
+        const rounded = Math.round(percent * 10) / 10;
+        return Number.isInteger(rounded) ? `${rounded.toFixed(0)}%` : `${rounded.toFixed(1)}%`;
+    };
+
+    const formatPronunciationValue = (metrics) => {
+        const percentText = formatPercent(metrics.pronunciationScore);
+        const comment = metrics.pronunciationComment;
+        if (percentText && comment) {
+            return `${percentText} • ${comment}`;
+        }
+        if (comment) return comment;
+        if (percentText) return percentText;
+        return '분석 대기';
+    };
+
+    const formatAnxietyValue = (metrics) => {
+        const percentText = formatPercent(metrics.anxietyRatio);
+        const comment = metrics.anxietyComment;
+        if (percentText && comment) {
+            return `${percentText} • ${comment}`;
+        }
+        if (comment) return comment;
+        if (percentText) return percentText;
+        return '분석 대기';
     };
 
 
@@ -134,7 +158,7 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
             speed: metrics.wpmGrade || 'C',
             expression: metrics.expressionGrade || 'C',
             pitch: metrics.pitchGrade || 'C',
-            clarity: convertPronunciationToGrade(metrics.pronunciationScore)
+            clarity: metrics.pronunciationGrade || fallbackPronunciationGrade(metrics.pronunciationScore)
         };
     };
 
@@ -177,7 +201,8 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
             'B': '#8bc34a',
             'C': '#ffc107',
             'D': '#ff9800',
-            'E': '#f44336'
+            'E': '#f44336',
+            'F': '#d32f2f'
         };
         return colors[grade] || '#9e9e9e';
     };
@@ -490,12 +515,13 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
                             />
                             <MetricItemWithGrade 
                                 label="명확성" 
-                                value={
-                                    metrics1.pronunciationScore !== null && metrics1.pronunciationScore !== undefined
-                                        ? `${(metrics1.pronunciationScore * 100).toFixed(1)}%`
-                                        : '분석 대기'
-                                }
+                                value={formatPronunciationValue(metrics1)}
                                 grade={grades1.clarity}
+                            />
+                            <MetricItemWithGrade 
+                                label="불안도" 
+                                value={formatAnxietyValue(metrics1)}
+                                grade={metrics1.anxietyGrade || 'C'}
                             />
                         </Box>
                     </Paper>
@@ -529,12 +555,13 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
                             />
                             <MetricItemWithGrade 
                                 label="명확성" 
-                                value={
-                                    metrics2.pronunciationScore !== null && metrics2.pronunciationScore !== undefined
-                                        ? `${(metrics2.pronunciationScore * 100).toFixed(1)}%`
-                                        : '분석 대기'
-                                }
+                                value={formatPronunciationValue(metrics2)}
                                 grade={grades2.clarity}
+                            />
+                            <MetricItemWithGrade 
+                                label="불안도" 
+                                value={formatAnxietyValue(metrics2)}
+                                grade={metrics2.anxietyGrade || 'C'}
                             />
                         </Box>
                     </Paper>
@@ -639,16 +666,20 @@ const ComparisonChart = ({ comparisonData, presentation1, presentation2 }) => {
 
 // 메트릭 아이템 컴포넌트 (등급 포함)
 const MetricItemWithGrade = ({ label, value, grade }) => {
-    const getGradeColor = (grade) => {
+    const getGradeColor = (inputGrade) => {
         const colors = {
             'A': '#4caf50',
             'B': '#8bc34a',
             'C': '#ffc107',
             'D': '#ff9800',
-            'E': '#f44336'
+            'E': '#f44336',
+            'F': '#d32f2f',
+            'N/A': '#9e9e9e'
         };
-        return colors[grade] || '#9e9e9e';
+        return colors[inputGrade] || '#9e9e9e';
     };
+
+    const displayGrade = grade || 'N/A';
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
@@ -657,10 +688,10 @@ const MetricItemWithGrade = ({ label, value, grade }) => {
                     {label}:
                 </Typography>
                 <Chip 
-                    label={grade} 
+                    label={displayGrade} 
                     size="small" 
                     sx={{ 
-                        backgroundColor: getGradeColor(grade),
+                        backgroundColor: getGradeColor(displayGrade),
                         color: 'white',
                         fontSize: '0.75rem',
                         fontWeight: '700',
