@@ -1,70 +1,91 @@
-# Getting Started with Create React App
+# 말콩 (Malkong)
+AI 기반 한국어 발표 연습 및 분석 웹서비스
+<img width="1440" height="809" alt="스크린샷 2026-01-28 오후 12 27 38" src="https://github.com/user-attachments/assets/4eb5d2c2-dc22-4ad5-97de-066a7aa77f05" />
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Available Scripts
 
-In the project directory, you can run:
+## 목차
+1. [프로젝트 소개](#1-프로젝트-소개)
+2. [주요 기능](#2-주요-기능)
+3. [분석 지표](#3-분석-지표)
+4. [시스템 아키텍처 및 기술 스택](#4-시스템-아키텍처-및-기술-스택)
+5. [시연 및 팀원](#5-시연-및-팀원)
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## 1. 프로젝트 소개
+말콩은 발표 연습 시 객관적인 피드백을 얻기 어려운 문제를 해결하기 위해 개발되었습니다. 발표자의 음성 및 영상을 AI로 분석하여 수치화된 지표를 제공하며, 특히 한국어 발표 환경에 최적화된 분석 엔진과 GPT 기반의 맞춤형 코칭을 제공합니다.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- **객관적 평가**: 속도, 명확성, 피치, 크기, 불안도 등 5가지 핵심 지표 수치화
+- **한국어 특화**: Whisper 기반의 한국어 음성 인식 및 분석 최적화
+- **성장 추적**: 이전 발표 데이터와의 비교를 통한 개선 사항 확인
 
-### `npm test`
+## 2. 주요 기능
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 2.1 발표 분석 및 리포트
+- 영상 업로드 및 실시간 녹화 기능 지원
+- 5가지 지표를 바탕으로 한 A~D 등급 평가 및 시각화 차트 제공
 
-### `npm run build`
+<img width="858" height="487" alt="스크린샷 2026-01-28 오후 1 43 45" src="https://github.com/user-attachments/assets/8c044907-fad6-4877-873e-3c6340e956d4" />
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 2.2 GPT 기반 맞춤형 코칭
+- 부자연스러운 문장 및 어색한 표현 수정 제안
+- 빈번하게 사용된 반복 단어 분석
+- 발표 내용 기반 예상 질문 및 시간 조절 가이드 제공
 
-### `npm run eject`
+<img width="1440" height="810" alt="스크린샷 2026-01-28 오후 1 20 22" src="https://github.com/user-attachments/assets/6313f68f-460e-4dd9-ab44-4ea8dc84ead2" />
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 2.3 발표 비교 및 협업
+- 동일 주제 내 이전 발표와 최신 발표의 항목별 점수 변화 분석
+- 팀 공간 내 발표 공유 및 댓글 기능을 통한 상호 피드백
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+<img width="1383" height="776" alt="스크린샷 2026-01-28 오후 1 22 46" src="https://github.com/user-attachments/assets/5c06f879-200f-4a41-bd62-6b69b7e42a25" />
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+<img width="876" height="445" alt="스크린샷 2026-01-28 오후 1 26 50" src="https://github.com/user-attachments/assets/17fbea64-2a84-4991-9125-048253aa2a79" />
 
-## Learn More
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## 3. 분석 지표
+말콩은 Multimodal 분석을 통해 다음과 같은 데이터를 산출합니다.
 
-### Code Splitting
+| 지표 | 설명 | 분석 방법 |
+| :--- | :--- | :--- |
+| **속도** | 발화 속도 (WPM) | Whisper STT 기반 단어 수 및 시간 계산 |
+| **명확성** | 발음의 정확도 | STT 수행 시 산출되는 신뢰도(Confidence) 측정 |
+| **피치** | 목소리 높낮이 변화 | Praat를 활용한 주파수(Hz) 편차 분석 |
+| **크기** | 음성 볼륨의 적절성 | 평균 음량(dB) 측정 및 기준값 대비 평가 |
+| **불안도** | 긴장 및 떨림 정도 | 음성(Jitter, Shimmer) 및 영상(움직임) 복합 분석 |
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+**불안도 분석 원리**
+- 음성 데이터의 미세한 떨림과 영상 데이터의 눈 깜빡임 빈도, 신체 움직임을 동시에 분석합니다.
+- 각 지표의 이상치가 동시에 발생하는 시점을 불안 징후 이벤트로 간주하여 전체적인 불안 수준을 결정합니다.
 
-### Analyzing the Bundle Size
+## 4. 시스템 아키텍처 및 기술 스택
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
 
-### Making a Progressive Web App
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+- **Frontend**: React
+    - 사용자 인터페이스 및 분석 결과 시각화 담당
+- **Backend**: Spring Boot
+    - 사용자 인증, 데이터 관리(MySQL), 분석 요청 처리 및 스케줄링
+- **AI 분석 서버**: FastAPI
+    - **Whisper**: Speech-to-Text (음성 인식 및 텍스트 변환)
+    - **Praat**: 음성 특성(피치, 크기, 주파수 변동) 분석
+    - **MediaPipe**: 영상 기반 비언어적 행동(신체 움직임, 눈 깜빡임) 분석
+    - **GPT API**: 분석 결과 기반 대본 교정 및 맞춤형 피드백 생성
 
-### Advanced Configuration
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
 
-### Deployment
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
 
-### `npm run build` fails to minify
+## 5. 시연 및 팀원
+- **데모 영상**: [시연 영상 바로가기](https://youtu.be/AB171fnqRrk)
+- **팀원 정보**
+    - 김서영: 프론트엔드 / 백엔드
+    - 김승건: 프론트엔드 / 백엔드
+    - 김준표: AI
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+---
